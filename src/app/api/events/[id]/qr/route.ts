@@ -1,4 +1,3 @@
-import { db } from "@/server/db";
 import { ok, route } from "@/server/http";
 import { requireUser } from "@/server/auth";
 import { ownedEvent } from "@/server/rules";
