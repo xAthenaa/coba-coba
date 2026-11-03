@@ -49,9 +49,13 @@ export function EventForm({ initial }: { initial?: WEvent }) {
         <Field label="Mulai" type="datetime-local" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} />
         <Field label="Selesai" type="datetime-local" value={f.end} onChange={(e) => setF({ ...f, end: e.target.value })} />
         <div><span className="mb-2 block text-xs font-medium">Lokasi — tap pin di peta: <b>{sel?.name ?? "belum dipilih"}</b></span>
-          <div className="h-48 overflow-hidden rounded-xl border border-line">
+          <div className="h-80 overflow-hidden rounded-xl border border-line">
             <MapView center={campuses.sudirman.center} zoom={17} markers={places.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, cat: p.category, label: p.name, selected: p.id === f.placeId }))} onMarker={(id) => setF({ ...f, placeId: id })} />
-          </div></div>
+          </div>
+          <select aria-label="Pilih lokasi dari daftar" value={f.placeId} onChange={(e) => setF({ ...f, placeId: e.target.value })} className="mt-2 h-12 w-full rounded-lg border border-line bg-muted px-3 text-sm">
+            <option value="">atau pilih dari daftar…</option>
+            {places.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select></div>
         {err && <p role="alert" className="text-xs font-medium text-danger">{err}</p>}
         <Button type="submit">Simpan</Button>
         <Button type="button" variant="secondary" onClick={() => r.back()}>Batal</Button>

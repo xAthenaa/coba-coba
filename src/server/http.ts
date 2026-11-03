@@ -37,7 +37,7 @@ export async function readJson(req: Request): Promise<Record<string, unknown>> {
   for (const [k, v] of Object.entries(body)) {
     const vals = Array.isArray(v) ? v : [v];
     const max = k === "password" ? 72 : 2000;
-    if (vals.some((x) => typeof x === "string" && x.length > max)) f[k] = `Maksimal ${max} karakter`;
+    if (vals.some((x) => typeof x === "string" && (k === "password" ? Buffer.byteLength(x) : x.length) > max)) f[k] = `Maksimal ${max} karakter`;
   }
   if (Object.keys(f).length) throw E.validation(f);
   return body as Record<string, unknown>;
