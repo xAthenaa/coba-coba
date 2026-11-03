@@ -1,8 +1,9 @@
 import { test, type Page } from "@playwright/test";
 const OUT = process.env.SHOTS_DIR ?? "../shots";
 async function login(page: Page, role: string) {
-  await page.goto("/login");
-  await page.evaluate((r) => { localStorage.setItem("wayo_session", JSON.stringify({ userId: "u", role: r, name: r === "panitia" ? "Panitia Demo" : "Pengunjung Demo", email: `${r}@contoh.id` })); localStorage.setItem("wayo-loc-pref", "allow"); }, role);
+  await page.addInitScript(() => localStorage.setItem("wayo-loc-pref", "allow"));
+  await page.context().clearCookies();
+  await page.request.post("/api/auth/login", { data: { email: `${role}@contoh.id`, password: "demo123" } });
 }
 const shot = async (page: Page, name: string, wait = 1500) => { await page.waitForTimeout(wait); await page.screenshot({ path: `${OUT}/${name}.png` }); };
 
