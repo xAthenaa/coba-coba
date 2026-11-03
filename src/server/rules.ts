@@ -5,9 +5,9 @@ import { CATEGORIES, PIN_TYPES, REQ, asDate, asEnum, isNum, isStr } from "./vali
 
 /** Ambil event + pastikan milik organizer user (404 dulu, lalu 403). */
 export async function ownedEvent(id: string, user: AuthUser) {
+  if (user.role !== "ORGANIZER") throw E.forbidden("Hanya untuk panitia");
   const ev = await db.event.findUnique({ where: { id } });
   if (!ev) throw E.notFound("Event tidak ditemukan");
-  if (user.role !== "ORGANIZER") throw E.forbidden("Hanya untuk panitia");
   if (user.organizer?.id !== ev.organizerId) throw E.forbidden("Event ini milik penyelenggara lain");
   return ev;
 }

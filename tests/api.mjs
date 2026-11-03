@@ -1,6 +1,6 @@
 /**
  * Tes API WAYO — test-plan-api.md A–G. Node >= 18 (fetch bawaan), tanpa dependensi tes.
- * Jalankan: npm run db:reset && npm run build && npm start   lalu   WAYO_URL=http://localhost:3000 node tests/api.mjs
+ * Jalankan: npm run db:fresh && npm run build && npm start   lalu   WAYO_URL=http://localhost:3000 node tests/api.mjs
  * Cek DB (hash bcrypt, jumlah seed) memakai @prisma/client milik proyek. WAYO_SKIP_DB=1 untuk melewatinya.
  */
 import { execSync } from "node:child_process";

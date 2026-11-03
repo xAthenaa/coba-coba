@@ -4,7 +4,7 @@ export const PIN_TYPES = ["TIMED", "PERMANENT"] as const;
 export const NOTIF_TYPES = ["EVENT_START", "PIN_NEW", "PIN_EXPIRING", "EVENT_UPDATED"] as const;
 
 export const REQ = "Wajib diisi";
-export const isStr = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
+export const isStr = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0 && v.length <= 2000;
 export const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 export const isEmail = (v: unknown): v is string => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 export function asEnum<T extends readonly string[]>(v: unknown, list: T): T[number] | null {

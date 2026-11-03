@@ -6,7 +6,7 @@ export default defineConfig({
     baseURL: "http://localhost:3100",
     viewport: { width: 440, height: 956 },
     deviceScaleFactor: 1,
-    geolocation: { latitude: -8.6736, longitude: 115.2228 },
+    geolocation: { latitude: -8.6730, longitude: 115.2195 },
     permissions: ["geolocation"],
     timezoneId: "Asia/Makassar",
   },

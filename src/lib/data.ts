@@ -2,7 +2,7 @@
 import type { CampusId, LatLng, Pin, WEvent, EventStatus, PinStatus } from "./types";
 
 export const campuses: Record<CampusId, { id: CampusId; name: string; center: LatLng }> = {
-  sudirman: { id: "sudirman", name: "Kampus Sudirman", center: { lat: -8.6745, lng: 115.224 } },
+  sudirman: { id: "sudirman", name: "Kampus Sudirman", center: { lat: -8.6724, lng: 115.2187 } },
   // Peta Jimbaran belum dibuat (design-notes UPDATE 13): hanya titik tengah, tanpa data tempat.
   jimbaran: { id: "jimbaran", name: "Kampus Jimbaran", center: { lat: -8.7985, lng: 115.17 } },
 };

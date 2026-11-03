@@ -8,7 +8,7 @@ Layout mobile max-width 440px (iPhone 16 Pro Max 440×956), margin 24px, Poppins
 ```bash
 cp .env.example .env   # DATABASE_URL, BASE_URL, WAYO_DEMO
 npm install            # juga menjalankan prisma generate
-npm run db:reset       # drop + migrate + seed (DB dev saja!)
+npm run db:fresh       # migrate deploy + kosongkan tabel + seed
 npm run dev            # http://localhost:3000
 ```
 Skrip DB: `db:migrate` (migrate dev), `db:seed` (idempoten, ID sama dengan data JSON), `db:fresh` (migrate deploy + kosongkan semua baris + seed; dipakai tes), `db:reset` (`prisma migrate reset`, merusak data).
