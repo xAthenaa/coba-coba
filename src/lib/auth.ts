@@ -1,10 +1,10 @@
 "use client";
-/** Login tiruan: sesi disimpan di localStorage ("wayo-session"). Peran: pengunjung | panitia | tamu. */
+/** Login tiruan: sesi disimpan di localStorage ("wayo_session"). Peran: pengunjung | panitia | tamu. */
 import { useCallback, useSyncExternalStore } from "react";
 
 export type Role = "pengunjung" | "panitia" | "tamu";
-export interface Session { role: Role; name: string; email: string }
-const KEY = "wayo-session";
+export interface Session { userId: string; role: Role; name: string; email: string }
+const KEY = "wayo_session";
 const ls = new Set<() => void>();
 let snap: string | null | undefined;
 

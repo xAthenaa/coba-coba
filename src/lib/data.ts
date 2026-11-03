@@ -1,31 +1,27 @@
 /**
- * Satu-satunya pintu masuk data contoh (mock). Semua JSON di src/data/ bertanda "_contoh".
- * - events/organizers/pins/places/notifications/users.json : dari Gigi (/workspace/rpl/data), kampus Jimbaran
- * - sudirman.json : data contoh tambahan untuk Kampus Sudirman (kampus default)
+ * Data contoh (mock) dari Gigi: /data/*.json (bertanda "_contoh"), Kampus Sudirman.
+ * File ini = seed sinkron + helper murni. Akses data dari UI lewat src/lib/api.ts (async, siap diganti fetch ke Route Handlers).
  * Untuk mengganti data, cukup ganti file JSON; bentuk field mengikuti src/lib/types.ts.
  */
-import eventsJson from "@/data/events.json";
-import organizersJson from "@/data/organizers.json";
-import pinsJson from "@/data/pins.json";
-import placesJson from "@/data/places.json";
-import notifJson from "@/data/notifications.json";
-import usersJson from "@/data/users.json";
-import sudirman from "@/data/sudirman.json";
+import eventsJson from "@data/events.json";
+import organizersJson from "@data/organizers.json";
+import pinsJson from "@data/pins.json";
+import placesJson from "@data/places.json";
+import notifJson from "@data/notifications.json";
+import usersJson from "@data/users.json";
 import type { CampusId, LatLng, Notif, Organizer, Pin, Place, WEvent, EventStatus, PinStatus } from "./types";
 
 export const campuses: Record<CampusId, { id: CampusId; name: string; center: LatLng }> = {
-  sudirman: { id: "sudirman", name: "Kampus Sudirman", center: sudirman.center },
-  jimbaran: { id: "jimbaran", name: "Kampus Jimbaran", center: placesJson.center },
+  sudirman: { id: "sudirman", name: "Kampus Sudirman", center: placesJson.center },
+  // Peta Jimbaran belum dibuat (design-notes UPDATE 13): hanya titik tengah, tanpa data tempat.
+  jimbaran: { id: "jimbaran", name: "Kampus Jimbaran", center: { lat: -8.7985, lng: 115.17 } },
 };
 export const DEFAULT_CAMPUS: CampusId = "sudirman";
 
-export const places: Place[] = [
-  ...(sudirman.places as Omit<Place, "campus">[]).map((p) => ({ ...p, campus: "sudirman" as const })),
-  ...(placesJson.places as Omit<Place, "campus">[]).map((p) => ({ ...p, campus: "jimbaran" as const })),
-];
-export const baseEvents: WEvent[] = [...(sudirman.events as WEvent[]), ...(eventsJson.events as WEvent[])];
+export const places: Place[] = (placesJson.places as Omit<Place, "campus">[]).map((p) => ({ ...p, campus: "sudirman" as const }));
+export const baseEvents: WEvent[] = eventsJson.events as WEvent[];
 export const organizers: Organizer[] = organizersJson.organizers as Organizer[];
-export const basePins: Pin[] = [...(sudirman.pins as Pin[]), ...(pinsJson.pins as Pin[])];
+export const basePins: Pin[] = pinsJson.pins as Pin[];
 export const notifications: Notif[] = notifJson.notifications as Notif[];
 export const users = usersJson.users;
 export const faculties = ["FMIPA", "Teknik", "FKH", "FK", "Universitas"];

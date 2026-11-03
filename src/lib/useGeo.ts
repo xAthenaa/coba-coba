@@ -8,7 +8,7 @@ export type GeoState = "loading" | "ok" | "simulated" | "denied" | "off" | "offl
 export const LOC_PREF = "wayo-loc-pref"; // "allow" | "later"
 
 /** Titik masuk kampus dipakai sebagai posisi simulasi bila GPS jauh dari kampus / tidak tersedia. */
-export const SIM_START: LatLng = { lat: -8.6752, lng: 115.2244 };
+export const SIM_START: LatLng = { lat: -8.6734, lng: 115.2221 };
 
 export function useGeo(): { pos: LatLng | null; state: GeoState } {
   const [pos, setPos] = useState<LatLng | null>(null);

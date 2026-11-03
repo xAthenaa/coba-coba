@@ -10,7 +10,7 @@ const listeners = new Set<() => void>();
 let cache: DB | null = null;
 
 function initial(): DB {
-  return { events: baseEvents, pins: basePins, registered: [...users[0].registeredEvents], profile: null };
+  return { events: baseEvents, pins: basePins, registered: [...(users[0].registeredEvents ?? [])], profile: null };
 }
 function read(): DB {
   if (cache) return cache;
