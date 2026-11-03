@@ -42,7 +42,7 @@ function Scanner() {
   const handle = (text: string) => {
     if (handled.current) return;
     const id = parseQr(text, ids);
-    if (id) { handled.current = true; scRef.current?.stop().catch(() => {}); r.push(`/peta/event/${id}`); }
+    if (id) { handled.current = true; try { if (scRef.current?.isScanning) scRef.current.stop().catch(() => {}); } catch { /* ignore */ } r.push(`/peta/event/${id}`); }
     else setInvalid(true);
   };
   const handleRef = useRef(handle);
@@ -69,7 +69,7 @@ function Scanner() {
     setTorch(next);
     try { await scRef.current?.applyVideoConstraints({ advanced: [{ torch: next } as MediaTrackConstraintSet] }); } catch { /* senter tidak didukung: tetap tampilkan state UI */ }
   };
-  const sample = db.events.find((e) => e.id === "ev-sintaks") ?? db.events[0];
+  const sample = db.events.find((e) => e.id === "ev-invention") ?? db.events[0];
 
   return (
     <main className="relative flex flex-1 flex-col overflow-y-auto bg-gray-950 px-6 pb-6 pt-4 text-gray-50">
@@ -87,7 +87,7 @@ function Scanner() {
       <div className="mt-6 space-y-3">
         <Button onClick={() => handle(`wayo:${sample.id}`)}>Simulasi scan ({sample.name.replace(" (contoh)", "")})</Button>
         <form onSubmit={(e) => { e.preventDefault(); handle(manual); }} className="flex gap-2">
-          <input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Kode/URL QR, mis. ev-sintaks" aria-label="Kode QR manual"
+          <input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Kode/URL QR, mis. ev-invention" aria-label="Kode QR manual"
             className="h-12 flex-1 rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white placeholder:text-gray-300 outline-none" />
           <button className="h-12 rounded-lg bg-white px-4 text-sm font-semibold text-primary">Buka</button>
         </form>
