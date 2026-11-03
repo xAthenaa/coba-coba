@@ -1,0 +1,160 @@
+// WAYO — skema Prisma (api-spec.md §1). Portabel SQLite ⇄ PostgreSQL:
+// enum disimpan sebagai String + validasi di kode (src/server/validate.ts), speakers = JSON string.
+// Ganti ke PostgreSQL: provider = "postgresql" dan DATABASE_URL="postgresql://user:pass@host:5432/wayo".
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  name            String
+  email           String         @unique
+  passwordHash    String
+  role            String // VISITOR | ORGANIZER
+  avatarUrl       String?
+  phone           String?
+  faculty         String?
+  defaultCampusId String         @default("sudirman")
+  createdAt       DateTime       @default(now())
+  defaultCampus   Campus         @relation(fields: [defaultCampusId], references: [id])
+  organizer       Organizer?
+  registrations   Registration[]
+  notifications   Notification[]
+  sessions        Session[]
+  pins            Pin[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Organizer {
+  id          String  @id @default(cuid())
+  name        String
+  logoUrl     String?
+  description String  @default("")
+  contact     String  @default("")
+  faculty     String  @default("")
+  ownerId     String  @unique
+  owner       User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  events      Event[]
+}
+
+model Campus {
+  id        String  @id
+  name      String
+  centerLat Float
+  centerLng Float
+  zoom      Int     @default(17)
+  places    Place[]
+  users     User[]
+}
+
+model Place {
+  id          String          @id @default(cuid())
+  campusId    String          @default("sudirman")
+  name        String
+  category    String // GEDUNG | EVENT | KANTIN | TOILET | PARKIR | INFO | STAND
+  lat         Float
+  lng         Float
+  photoUrl    String?
+  description String?
+  campus      Campus          @relation(fields: [campusId], references: [id])
+  events      Event[]
+  facilityOf  EventFacility[]
+  qrTargets   QrMap[]
+}
+
+model Event {
+  id          String          @id @default(cuid())
+  organizerId String
+  placeId     String
+  name        String
+  description String          @default("")
+  posterUrl   String?
+  faculty     String
+  startAt     DateTime
+  endAt       DateTime
+  speakers    String          @default("[]") // JSON array of strings
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  organizer   Organizer       @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  place       Place           @relation(fields: [placeId], references: [id])
+  pins        Pin[]
+  registrations Registration[]
+  qr          QrMap?
+  facilities  EventFacility[]
+
+  @@index([startAt])
+}
+
+model EventFacility {
+  eventId String
+  placeId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, placeId])
+}
+
+model Pin {
+  id          String    @id @default(cuid())
+  eventId     String
+  label       String
+  category    String
+  lat         Float
+  lng         Float
+  type        String // TIMED | PERMANENT
+  startAt     DateTime?
+  endAt       DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdBy   User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+}
+
+model QrMap {
+  id            String    @id @default(cuid())
+  eventId       String    @unique
+  targetPlaceId String?
+  code          String    @unique
+  createdAt     DateTime  @default(now())
+  regeneratedAt DateTime?
+  event         Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  targetPlace   Place?    @relation(fields: [targetPlaceId], references: [id], onDelete: SetNull)
+}
+
+model Registration {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String // EVENT_START | PIN_NEW | PIN_EXPIRING | EVENT_UPDATED
+  text      String
+  eventId   String?
+  pinId     String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}

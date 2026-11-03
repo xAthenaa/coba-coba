@@ -1,0 +1,5 @@
+{"_contoh": true, "_catatan": "DATA CONTOH, bukan data asli", "organizers": [
+ {"id":"org-hmif","name":"HMIF Unud (contoh)","logo":"/img/org-hmif.png","description":"Himpunan Mahasiswa Informatika (contoh).","contact":"hmif@contoh.id","faculty":"FMIPA"},
+ {"id":"org-bem","name":"BEM PM Unud (contoh)","logo":"/img/org-bem.png","description":"Badan Eksekutif Mahasiswa (contoh).","contact":"bem@contoh.id","faculty":"Universitas"},
+ {"id":"org-ft","name":"Teknik Expo Committee (contoh)","logo":"/img/org-ft.png","description":"Panitia pameran Fakultas Teknik (contoh).","contact":"expo@contoh.id","faculty":"Teknik"}
+]}

@@ -1,0 +1,4 @@
+{"_contoh": true, "_catatan": "Login tiruan, tanpa backend. Jangan pakai password asli.", "users": [
+ {"id":"u-pengunjung","name":"Pengunjung Demo","email":"pengunjung@contoh.id","password":"demo123","role":"visitor","registeredEvents":["ev-webinar","ev-pkkmb"]},
+ {"id":"u-panitia","name":"Panitia Demo","email":"panitia@contoh.id","password":"demo123","role":"organizer","organizerId":"org-ft"}
+]}
