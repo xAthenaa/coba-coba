@@ -1,11 +1,15 @@
 import { db } from "@/server/db";
-import { ok, route } from "@/server/http";
+import { E, ok, route } from "@/server/http";
 import { requireUser } from "@/server/auth";
 import { activePinWhere, pinOut } from "@/server/serialize";
-/** Semua pin yang sedang aktif (untuk peta pengunjung). ?eventId opsional. */
+import { CATEGORIES, asEnum } from "@/server/validate";
+/** Semua pin yang sedang aktif (untuk peta pengunjung). ?eventId & ?category opsional. */
 export const GET = route(async (req) => {
   await requireUser();
-  const eventId = new URL(req.url).searchParams.get("eventId");
-  const pins = await db.pin.findMany({ where: { ...activePinWhere(), ...(eventId ? { eventId } : {}) }, orderBy: { createdAt: "asc" } });
+  const sp = new URL(req.url).searchParams;
+  const eventId = sp.get("eventId");
+  let category: string | null = null;
+  if (sp.get("category")) { category = asEnum(sp.get("category"), CATEGORIES); if (!category) throw E.validation({ category: "Kategori tidak dikenal" }); }
+  const pins = await db.pin.findMany({ where: { ...activePinWhere(), ...(eventId ? { eventId } : {}), ...(category ? { category } : {}) }, orderBy: { createdAt: "asc" } });
   return ok(pins.map(pinOut));
 });

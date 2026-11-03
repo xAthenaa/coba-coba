@@ -9,5 +9,5 @@ export const POST = route<{ id: string }>(async (req, { id }) => {
   const ev = await ownedEvent(id, u);
   await ensureQr(id, ev.placeId);
   const qr = await db.qrMap.update({ where: { eventId: id }, data: { code: qrCode(), regeneratedAt: new Date() } });
-  return ok({ code: qr.code, url: `${baseUrl(req)}/q/${qr.code}`, createdAt: qr.createdAt, regeneratedAt: qr.regeneratedAt });
+  return ok({ code: qr.code, url: `${baseUrl(req)}/q/${qr.code}`, createdAt: qr.createdAt, regeneratedAt: qr.regeneratedAt }, 201);
 });

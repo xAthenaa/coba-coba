@@ -57,7 +57,13 @@ export function validatePin(b: Record<string, unknown>, base?: PinIn): PinIn {
   const out = { startAt: null, endAt: null, ...(base ?? {}) } as PinIn;
   if (has("label")) { if (!isStr(b.label)) f.label = REQ; else out.label = b.label.trim(); }
   if (has("category")) { const c = asEnum(b.category, CATEGORIES); if (!c) f.category = b.category ? "Kategori tidak dikenal" : REQ; else out.category = c; }
-  for (const k of ["lat", "lng"] as const) if (has(k)) { if (!isNum(b[k])) f[k] = REQ; else out[k] = b[k] as number; }
+  for (const k of ["lat", "lng"] as const) if (has(k)) {
+    const max = k === "lat" ? 90 : 180;
+    if (b[k] === undefined || b[k] === null) f[k] = REQ;
+    else if (!isNum(b[k])) f[k] = "Harus berupa angka";
+    else if (Math.abs(b[k] as number) > max) f[k] = `Di luar rentang ±${max}`;
+    else out[k] = b[k] as number;
+  }
   if (has("type")) { const t = asEnum(b.type, PIN_TYPES); if (!t) f.type = b.type ? "Tipe harus TIMED atau PERMANENT" : REQ; else out.type = t; }
   for (const k of ["startAt", "endAt"] as const) if (k in b) {
     if (b[k] === null || b[k] === "") out[k] = null;

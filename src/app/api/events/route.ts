@@ -1,5 +1,5 @@
 import { db } from "@/server/db";
-import { ok, route, readJson } from "@/server/http";
+import { E, ok, route, readJson } from "@/server/http";
 import { requireOrganizer, requireUser } from "@/server/auth";
 import { eventInclude, eventOut, eventStatus } from "@/server/serialize";
 import { validateEvent } from "@/server/rules";
@@ -15,7 +15,10 @@ export const GET = route(async (req) => {
   if (sp.get("faculty")) where.faculty = sp.get("faculty");
   if (sp.get("campusId")) where.place = { campusId: sp.get("campusId") };
   const q = sp.get("q")?.trim().toLowerCase();
-  const status = sp.get("status")?.toUpperCase();
+  const ALIAS: Record<string, string> = { AKTIF: "ONGOING", BERLANGSUNG: "ONGOING", "AKAN-DATANG": "UPCOMING", "AKAN DATANG": "UPCOMING", SELESAI: "ENDED" };
+  const rawStatus = sp.get("status")?.toUpperCase();
+  const status = rawStatus ? ALIAS[rawStatus] ?? rawStatus : undefined;
+  if (status && !["ONGOING", "UPCOMING", "ENDED"].includes(status)) throw E.validation({ status: "Status tidak dikenal" });
   const [events, regs] = await Promise.all([
     db.event.findMany({ where, include: eventInclude, orderBy: { startAt: "asc" } }),
     db.registration.findMany({ where: { userId: u.id }, select: { eventId: true } }),
