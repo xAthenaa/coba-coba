@@ -1,24 +1,52 @@
-# WAYO — Way To Go (Web UI prototype)
+# WAYO — Way To Go
 
-Prototype **UI saja** (tanpa backend) aplikasi peta & navigasi jalan kaki area event kampus Universitas Udayana.
-Next.js 15 App Router · TypeScript · Tailwind v4 · Leaflet + OpenStreetMap (react-leaflet, client-only) · html5-qrcode · qrcode.
+Aplikasi peta & navigasi jalan kaki area event kampus Universitas Udayana — UI + backend (Next.js route handlers + Prisma).
+Next.js 15 App Router · TypeScript · Tailwind v4 · Leaflet/OSM · SWR · Prisma 6 (SQLite dev, siap Postgres) · bcryptjs · qrcode.
 Layout mobile max-width 440px (iPhone 16 Pro Max 440×956), margin 24px, Poppins, primary navy `#1E3A8A`.
 
 ## Setup
 ```bash
-npm install
+cp .env.example .env   # DATABASE_URL, BASE_URL, WAYO_DEMO
+npm install            # juga menjalankan prisma generate
+npm run db:reset       # drop + migrate + seed (DB dev saja!)
 npm run dev            # http://localhost:3000
-npm run build && npm run lint
-npx playwright install chromium
-npm run test:e2e       # smoke test 440x956: semua route, tanpa console error
-npm run shots          # screenshot ke ../shots (SHOTS_DIR untuk mengubah)
 ```
-Akun demo (data contoh): `pengunjung@contoh.id` / `demo123`, `panitia@contoh.id` / `demo123`, atau "Masuk sebagai tamu" (tamu **tidak bisa** scan QR).
+Skrip DB: `db:migrate` (migrate dev), `db:seed` (idempoten, ID sama dengan data JSON), `db:fresh` (migrate deploy + kosongkan semua baris + seed; dipakai tes), `db:reset` (`prisma migrate reset`, merusak data).
+
+Akun demo: `pengunjung@contoh.id` / `demo123` (PENGUNJUNG), `panitia@contoh.id` / `demo123` (PANITIA). Mode tamu dihapus.
+`WAYO_DEMO=1` mengaktifkan `/api/dev/qr-sample` (dipakai tombol "simulasi scan"); matikan di produksi.
+
+### Pindah ke Postgres
+1. `prisma/schema.prisma`: `provider = "postgresql"` (enum sudah disimpan sebagai string, tidak perlu ubah model).
+2. `.env`: `DATABASE_URL="postgresql://user:pass@host:5432/wayo"`.
+3. Hapus `prisma/migrations` (migrasi SQLite) lalu `npx prisma migrate dev --name init` dan `npm run db:seed`.
+
+## Tes
+```bash
+npm run build && npm run lint && npx prisma validate
+npm run start &                       # atau npm run dev
+WAYO_URL=http://localhost:3000 npm run test:api   # tests/api.mjs (fetch saja; WAYO_SKIP_DB=1 lewati cek DB)
+npx playwright install chromium
+npm run test:e2e                      # build dulu; server :3100 dengan db:fresh
+SHOTS=1 npm run shots                 # screenshot
+```
+Jalankan `npm run db:fresh` sebelum `test:api` agar data deterministik.
+
+## API
+Envelope `{data}` / `{error:{code,message,fields?}}`. Sesi: cookie httpOnly `wayo_session` (token 32 byte, disimpan SHA-256, 7 hari) + cookie petunjuk `wayo_role` untuk middleware. Urutan cek: 401 → 403 → 404; 405 metode salah; 409 konflik; 400 JSON rusak/validasi.
+- Auth: `POST /api/auth/register|login|logout|forgot`
+- Me: `GET|PATCH /api/me`, `GET /api/me/registrations`
+- `GET /api/campuses`, `GET /api/places?lat&lng` (Haversine), `GET /api/places/[id]`
+- Events: `GET|POST /api/events` (`mine, organizerId, faculty, campusId, q, status`), `GET|PATCH|DELETE /api/events/[id]`, `POST|DELETE /api/events/[id]/register`
+- Pins: `GET|POST /api/events/[id]/pins`, `GET /api/pins?eventId&category`, `GET|PATCH|DELETE /api/pins/[id]`
+- QR: `GET /api/events/[id]/qr`, `GET /api/events/[id]/qr/png`, `POST /api/events/[id]/qr/regenerate`, `GET /api/qr/[code]`; halaman `/q/[code]`
+- Organizers: `GET /api/organizers`, `GET /api/organizers/[id]`, `GET|PATCH /api/organizers/me`
+- Notifikasi: `GET /api/notifications` (EVENT_START/PIN_EXPIRING dibuat lazy), `POST /api/notifications/[id]/read`, `POST /api/notifications/read-all`
 
 ## Struktur
 - `data/*.json` — data contoh dari Gigi (bertanda `_contoh`), Kampus Sudirman.
 - `src/lib/api.ts` — lapisan akses data **async** (ganti isi fungsi dengan `fetch('/api/...')` saat backend siap). Perubahan (event/pin/daftar) disimpan di localStorage di atas JSON; reset di Profil › Pengaturan.
-- `src/lib/data.ts` seed + helper status (event berlangsung/selesai, pin Aktif/Terjadwal/Kedaluwarsa) · `src/lib/store.ts` store localStorage · `src/lib/auth.ts` sesi tiruan (`wayo_session`).
+- `src/server/*` logika backend (http, auth, validate, rules, serialize, qr, notify) · `src/app/api/**` route handlers · `src/lib/api.ts` hook SWR + mapping · `src/lib/auth.ts` sesi via `/api/me` · `src/middleware.ts` proteksi halaman per peran · `prisma/` skema, migrasi, seed.
 - `src/lib/tokens.ts` + `src/app/globals.css` (`@theme`) — design tokens dari `design-tokens.md` (Bocil).
 - `src/components/` — Screen, Header, BottomNav (Pengunjung/Panitia), Modal/Sheet (overlay), Toast, MapView (dynamic, ssr:false), PetaView, EventForm, PinForm.
 - Lokasi: `navigator.geolocation` (watchPosition). Jika di luar kampus (>3 km) dipakai posisi simulasi; ditolak/GPS mati/offline → banner. Demo state: `?lokasi=mati|ditolak|offline`.
