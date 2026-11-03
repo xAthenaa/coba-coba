@@ -1,0 +1,25 @@
+{"_contoh": true, "_catatan": "DATA CONTOH tambahan (bukan dari Gigi). Koordinat PERKIRAAN sekitar Kampus Unud Sudirman, Denpasar, bukan hasil survei.",
+"center": {"lat": -8.6767, "lng": 115.2260},
+"places": [
+ {"id":"pl-pasca","name":"Aula Pascasarjana (contoh)","category":"gedung","lat":-8.6761,"lng":115.2254,"hours":"07.00 – 21.00","description":"Aula utama untuk seminar dan acara besar. Pintu masuk di sisi barat (contoh)."},
+ {"id":"pl-fk","name":"Gedung Fakultas Kedokteran (contoh)","category":"gedung","lat":-8.6772,"lng":115.2268},
+ {"id":"pl-fkh","name":"Gedung FKH (contoh)","category":"gedung","lat":-8.6778,"lng":115.2252},
+ {"id":"pl-perpus-sdm","name":"Perpustakaan Sudirman (contoh)","category":"gedung","lat":-8.6758,"lng":115.2266},
+ {"id":"pl-kantin-sdm","name":"Kantin Sudirman (contoh)","category":"kantin","lat":-8.6769,"lng":115.2249},
+ {"id":"pl-kantin-fk","name":"Kantin FK (contoh)","category":"kantin","lat":-8.6776,"lng":115.2272},
+ {"id":"pl-toilet-pasca","name":"Toilet Pascasarjana (contoh)","category":"toilet","lat":-8.6763,"lng":115.2258},
+ {"id":"pl-toilet-fk","name":"Toilet FK (contoh)","category":"toilet","lat":-8.6774,"lng":115.2264},
+ {"id":"pl-parkir-sdm","name":"Parkir Utama Sudirman (contoh)","category":"parkir","lat":-8.6755,"lng":115.2250},
+ {"id":"pl-parkir-fk","name":"Parkir FK (contoh)","category":"parkir","lat":-8.6781,"lng":115.2266},
+ {"id":"pl-info-sdm","name":"Pos Informasi Sudirman (contoh)","category":"info","lat":-8.6765,"lng":115.2245}
+],
+"events": [
+ {"id":"ev-sintaks","organizerId":"org-hmif","name":"Sintaks IV (contoh)","description":"Seminar & workshop teknologi mahasiswa (contoh).","poster":"","placeId":"pl-pasca","faculty":"FMIPA","start":"2026-11-02T08:00:00+08:00","end":"2026-11-06T17:00:00+08:00","speakers":["Narasumber B (contoh)"],"facilities":["pl-toilet-pasca","pl-parkir-sdm","pl-kantin-sdm"],"status":"ongoing"},
+ {"id":"ev-techfest","organizerId":"org-ft","name":"Udayana Tech Fest 2026 (contoh)","description":"Festival teknologi dan lomba antar fakultas (contoh).","poster":"","placeId":"pl-fk","faculty":"Teknik","start":"2026-11-20T09:00:00+08:00","end":"2026-11-21T17:00:00+08:00","speakers":[],"facilities":["pl-toilet-fk","pl-parkir-fk"],"status":"upcoming"}
+],
+"pins": [
+ {"id":"pin-regis-sintaks","eventId":"ev-sintaks","label":"Meja Registrasi Sintaks (contoh)","category":"event","lat":-8.6760,"lng":115.2257,"type":"timed","start":"2026-11-02T07:00:00+08:00","end":"2026-11-06T17:00:00+08:00"},
+ {"id":"pin-stand-ukm","eventId":"ev-sintaks","label":"Stand UKM (contoh)","category":"stand","lat":-8.6764,"lng":115.2251,"type":"permanent"},
+ {"id":"pin-p3k-sdm","eventId":"ev-sintaks","label":"Pos P3K Sudirman (contoh)","category":"info","lat":-8.6766,"lng":115.2262,"type":"permanent"},
+ {"id":"pin-lama","eventId":"ev-sintaks","label":"Booth Pra-acara (contoh, kedaluwarsa)","category":"event","lat":-8.6770,"lng":115.2256,"type":"timed","start":"2026-10-01T07:00:00+08:00","end":"2026-10-02T17:00:00+08:00"}
+]}

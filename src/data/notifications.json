@@ -1,0 +1,5 @@
+{"_contoh": true, "notifications": [
+ {"id":"n1","type":"event_start","eventId":"ev-invention","text":"Invention Expo sudah dimulai (contoh)","time":"2026-11-03T09:00:00+08:00"},
+ {"id":"n2","type":"pin_new","pinId":"pin-stand-kopi","text":"Pin baru: Stand Kopi (contoh)","time":"2026-11-03T09:30:00+08:00"},
+ {"id":"n3","type":"pin_expiring","pinId":"pin-booth-reg","text":"Pin Booth Registrasi akan dihapus 5 Nov 17.00 (contoh)","time":"2026-11-03T10:00:00+08:00"}
+]}
