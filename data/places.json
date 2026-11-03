@@ -2,8 +2,8 @@
  "_contoh": true,
  "_catatan": "Koordinat PERKIRAAN sekitar Kampus Unud Sudirman (Denpasar), bukan hasil survei",
  "center": {
-  "lat": -8.6745,
-  "lng": 115.224
+  "lat": -8.6724,
+  "lng": 115.2187
  },
  "categories": [
   "gedung",
@@ -19,78 +19,78 @@
    "id": "pl-auditorium",
    "name": "Aula Kampus Sudirman (contoh)",
    "category": "gedung",
-   "lat": -8.6753,
-   "lng": 115.2235
+   "lat": -8.6732,
+   "lng": 115.2182
   },
   {
    "id": "pl-rektorat",
    "name": "Gedung Pascasarjana (contoh)",
    "category": "gedung",
-   "lat": -8.6738,
-   "lng": 115.223
+   "lat": -8.6717,
+   "lng": 115.2177
   },
   {
    "id": "pl-fmipa",
    "name": "Gedung Fakultas Kedokteran (contoh)",
    "category": "gedung",
-   "lat": -8.675,
-   "lng": 115.2253
+   "lat": -8.6729,
+   "lng": 115.22
   },
   {
    "id": "pl-ft",
    "name": "Gedung FEB (contoh)",
    "category": "gedung",
-   "lat": -8.6728,
-   "lng": 115.2258
+   "lat": -8.6707,
+   "lng": 115.2205
   },
   {
    "id": "pl-kantin-fmipa",
    "name": "Kantin FK (contoh)",
    "category": "kantin",
-   "lat": -8.6754,
-   "lng": 115.2257
+   "lat": -8.6733,
+   "lng": 115.2204
   },
   {
    "id": "pl-kantin-pusat",
    "name": "Kantin Pusat (contoh)",
    "category": "kantin",
-   "lat": -8.6742,
-   "lng": 115.2244
+   "lat": -8.6721,
+   "lng": 115.2191
   },
   {
    "id": "pl-toilet-aud",
    "name": "Toilet Auditorium (contoh)",
    "category": "toilet",
-   "lat": -8.6756,
-   "lng": 115.2238
+   "lat": -8.6735,
+   "lng": 115.2185
   },
   {
    "id": "pl-toilet-fmipa",
    "name": "Toilet FK (contoh)",
    "category": "toilet",
-   "lat": -8.6748,
-   "lng": 115.2255
+   "lat": -8.6727,
+   "lng": 115.2202
   },
   {
    "id": "pl-parkir-utama",
    "name": "Parkir Utama (contoh)",
    "category": "parkir",
-   "lat": -8.6732,
-   "lng": 115.2226
+   "lat": -8.6711,
+   "lng": 115.2173
   },
   {
    "id": "pl-parkir-ft",
    "name": "Parkir FEB (contoh)",
    "category": "parkir",
-   "lat": -8.6724,
-   "lng": 115.2263
+   "lat": -8.6703,
+   "lng": 115.221
   },
   {
    "id": "pl-info",
    "name": "Pusat Informasi (contoh)",
    "category": "info",
-   "lat": -8.674,
-   "lng": 115.2237
+   "lat": -8.6719,
+   "lng": 115.2184
   }
  ],
  "campus": "Sudirman"
