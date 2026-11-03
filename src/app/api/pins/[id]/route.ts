@@ -6,6 +6,7 @@ import { ownedEvent, validatePin } from "@/server/rules";
 
 type P = { id: string };
 async function ownedPin(id: string, u: AuthUser) {
+  if (u.role !== "ORGANIZER") throw E.forbidden("Hanya untuk panitia");
   const p = await db.pin.findUnique({ where: { id } });
   if (!p) throw E.notFound("Pin tidak ditemukan");
   await ownedEvent(p.eventId, u);

@@ -20,12 +20,16 @@ function icon(color: string, selected?: boolean) {
   });
 }
 
-function Controller({ focus, focusKey, onMapClick, route }: { focus?: LatLng | null; focusKey?: string | number; onMapClick?: (l: LatLng) => void; route?: LatLng[] }) {
+function Controller({ focus, focusKey, onMapClick, route, fitTo }: { focus?: LatLng | null; focusKey?: string | number; onMapClick?: (l: LatLng) => void; route?: LatLng[]; fitTo?: LatLng[] }) {
   const map = useMap();
   useEffect(() => { if (focus) map.flyTo([focus.lat, focus.lng], Math.max(map.getZoom(), 18), { duration: 0.6 }); }, [focusKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (route && route.length > 1) map.fitBounds(L.latLngBounds(route.map((p) => [p.lat, p.lng])), { padding: [48, 48] });
   }, [route?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!fitTo || fitTo.length < 2 || (route && route.length > 1)) return;
+    map.fitBounds(L.latLngBounds(fitTo.map((p) => [p.lat, p.lng])), { padding: [40, 40], maxZoom: 18 });
+  }, [fitTo?.length]); // eslint-disable-line react-hooks/exhaustive-deps
   useMapEvents({ click: (e) => onMapClick?.({ lat: e.latlng.lat, lng: e.latlng.lng }) });
   return null;
 }
@@ -46,7 +50,7 @@ export default function MapInner({ center, zoom = 17, markers = [], user, route,
         <CircleMarker center={[user.lat, user.lng]} radius={16} pathOptions={{ color: "#2563EB", weight: 0, fillOpacity: 0.18 }} />
         <CircleMarker center={[user.lat, user.lng]} radius={7} pathOptions={{ color: "#fff", weight: 3, fillColor: "#2563EB", fillOpacity: 1 }} />
       </>}
-      <Controller focus={focus} focusKey={focusKey} onMapClick={onMapClick} route={route} />
+      <Controller focus={focus} focusKey={focusKey} onMapClick={onMapClick} route={route} fitTo={markers} />
     </MapContainer>
   );
 }
