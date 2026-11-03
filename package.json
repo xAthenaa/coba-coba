@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force --skip-seed && tsx prisma/seed.ts",
-    "test:api": "node tests/api.mjs"
+    "test:api": "node tests/api.mjs",
+    "db:fresh": "prisma migrate deploy && tsx prisma/fresh.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

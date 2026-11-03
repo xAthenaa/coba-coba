@@ -1,11 +1,12 @@
+"use client";
 import Link from "next/link";
-import { eventStatus, fmtDate, getPlace, campuses } from "@/lib/data";
-import type { WEvent } from "@/lib/types";
+import { eventStatus, fmtDate, campuses } from "@/lib/data";
+import type { UIEvent } from "@/lib/api";
 import { Icon } from "./Icon";
 import { Poster } from "./Poster";
 
-export function EventCard({ e, href, action = "Lihat Detail" }: { e: WEvent; href?: string; action?: string }) {
-  const pl = getPlace(e.placeId);
+export function EventCard({ e, href, action = "Lihat Detail" }: { e: UIEvent; href?: string; action?: string }) {
+  const pl = e.place;
   const st = eventStatus(e);
   const d = new Date(e.start);
   return (

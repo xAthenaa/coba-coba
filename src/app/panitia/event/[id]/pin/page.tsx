@@ -5,15 +5,15 @@ import { Guard } from "@/components/Guard";
 import { Header, Button, Badge, CatDot, Empty } from "@/components/ui";
 import { Screen } from "@/components/Screen";
 import { Icon } from "@/components/Icon";
-import { useDB } from "@/lib/api";
+import { useEventPins } from "@/lib/api";
 import { fmtDate, fmtTime, pinStatus } from "@/lib/data";
 import { categoryLabel } from "@/lib/tokens";
 
 /** P-04 Daftar Pin (badge tipe + status Aktif/Terjadwal/Kedaluwarsa). Toast P-04b/P-04c tampil setelah simpan/hapus. */
 function Pins() {
   const { id } = useParams<{ id: string }>();
-  const db = useDB();
-  const pins = db.pins.filter((p) => p.eventId === id);
+  const { data, isLoading } = useEventPins(id);
+  const pins = data ?? [];
   return (
     <Screen header={<Header title="Daftar Pin" backHref={`/panitia/event/${id}`} />}>
       <Button href={`/panitia/event/${id}/pin/baru`}><Icon name="plus" size={18} />Pin</Button>
@@ -33,7 +33,7 @@ function Pins() {
           );
         })}
       </ul>
-      {!pins.length && <Empty title="Belum ada pin" sub="Tambahkan pin untuk event ini." />}
+      {!isLoading && !pins.length && <Empty title="Belum ada pin" sub="Tambahkan pin untuk event ini." />}
     </Screen>
   );
 }

@@ -7,8 +7,8 @@ import { Button, Badge, Empty, Header } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { useItem } from "@/lib/mapItems";
 import { useGeo, SIM_START } from "@/lib/useGeo";
-import { useDB } from "@/lib/store";
-import { campuses, eventStatus, fmtDate, fmtTime, getPlace } from "@/lib/data";
+import { useEvents } from "@/lib/api";
+import { campuses, eventStatus, fmtDate, fmtTime } from "@/lib/data";
 import { categoryLabel } from "@/lib/tokens";
 import { distance, fmtDist, walkMin } from "@/lib/geo";
 
@@ -17,14 +17,15 @@ export default function Tempat() {
   const { id } = useParams<{ id: string }>();
   const it = useItem(id);
   const geo = useGeo();
-  const db = useDB();
+  const { data: events = [], isLoading } = useEvents();
   const r = useRouter();
+  if (!it && isLoading) return <main className="flex flex-1 items-center justify-center text-sm text-ink-2">Memuat…</main>;
   if (!it) return <><Header title="Detail Tempat" /><main className="flex-1 p-6"><Empty title="Tempat tidak ditemukan" /></main></>;
   const origin = geo.pos ?? SIM_START;
   const d = distance(origin, it);
   const placeId = it.pin ? null : it.id;
-  const evHere = db.events.filter((e) => (placeId ? e.placeId === placeId : e.id === it.pin?.eventId) && eventStatus(e) !== "selesai");
-  const parent = it.pin ? db.events.find((e) => e.id === it.pin!.eventId) : undefined;
+  const evHere = events.filter((e) => (placeId ? e.placeId === placeId : e.id === it.pin?.eventId) && eventStatus(e) !== "selesai");
+  const parent = it.pin ? events.find((e) => e.id === it.pin!.eventId) : undefined;
   return (
     <>
       <div className="relative h-[38%] shrink-0">
@@ -60,7 +61,6 @@ export default function Tempat() {
             <span><span className="block font-medium">{e.name}</span><span className="text-xs text-ink-2">{fmtDate(e.start)}</span></span><Icon name="chevron" size={18} />
           </Link>
         )) : <p className="mt-1 text-sm text-ink-2">{parent ? `Bagian dari ${parent.name}` : "Tidak ada event aktif."}</p>}
-        {placeId && getPlace(placeId) === undefined && null}
       </main>
       <BottomNav />
     </>

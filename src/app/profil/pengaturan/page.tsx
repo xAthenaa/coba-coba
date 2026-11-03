@@ -1,17 +1,21 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { Header, Toggle2, Button } from "@/components/ui";
+import { Header, Toggle2 } from "@/components/ui";
 import { Screen } from "@/components/Screen";
 import { useToast } from "@/components/Toast";
-import { resetDB } from "@/lib/store";
+import { updateProfile } from "@/lib/api";
+import { useSession } from "@/lib/auth";
 import type { CampusId } from "@/lib/types";
 
 /** V-13c Pengaturan */
 export default function Pengaturan() {
   const toast = useToast();
   const [notif, setNotif] = useState(true);
-  const [campus, setCampus] = useState<CampusId>("sudirman");
+  const s = useSession();
+  const [picked, setPicked] = useState<CampusId | null>(null);
+  const campus = picked ?? ((s?.defaultCampusId as CampusId) || "sudirman");
+  const setCampus = async (c: CampusId) => { setPicked(c); try { await updateProfile({ defaultCampusId: c }); toast("Kampus default disimpan"); } catch { toast("Gagal menyimpan", "error"); } };
   return (
     <Screen header={<Header title="Pengaturan" />}>
       <section className="space-y-5">
@@ -22,7 +26,6 @@ export default function Pengaturan() {
           <Toggle2 value={campus} onChange={setCampus} options={[{ v: "jimbaran", label: "KAMPUS JIMBARAN" }, { v: "sudirman", label: "KAMPUS SUDIRMAN" }]} /></div>
         <Link href="/izin-lokasi" className="block text-sm font-semibold text-primary">Izin lokasi ›</Link>
         <Link href="/peta?lokasi=offline" className="block text-sm font-semibold text-primary">Simpan peta offline (lihat state offline) ›</Link>
-        <Button variant="secondary" onClick={() => { resetDB(); toast("Data contoh direset"); }}>Reset data contoh</Button>
       </section>
     </Screen>
   );

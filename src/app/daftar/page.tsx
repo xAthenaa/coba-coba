@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Field, Toggle2, Header } from "@/components/ui";
-import { setSession } from "@/lib/auth";
+import { register } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
 import { useToast } from "@/components/Toast";
 
 /** L-02 Daftar (L-02b = Panitia dipilih) */
@@ -13,12 +14,20 @@ export default function Daftar() {
   const [role, setRole] = useState<"pengunjung" | "panitia">("pengunjung");
   const [f, setF] = useState({ name: "", email: "", pw: "" });
   const [err, setErr] = useState("");
-  const submit = (e: React.FormEvent) => {
+  const [fe, setFe] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!f.name || !f.email || f.pw.length < 6) return setErr("Lengkapi semua kolom (password minimal 6 karakter)");
-    setSession({ userId: `u-${Date.now()}`, role, name: f.name, email: f.email });
-    toast("Akun dibuat (simulasi)");
-    r.push(role === "panitia" ? "/panitia" : "/izin-lokasi");
+    if (!f.name || !f.email || f.pw.length < 8) return setErr("Lengkapi semua kolom (password minimal 8 karakter)");
+    setBusy(true); setErr(""); setFe({});
+    try {
+      await register({ name: f.name, email: f.email, password: f.pw, role: role === "panitia" ? "ORGANIZER" : "VISITOR" });
+      toast("Akun dibuat");
+      r.replace(role === "panitia" ? "/panitia" : "/izin-lokasi");
+    } catch (x) {
+      if (x instanceof ApiError) { setErr(x.message); setFe(x.fields ?? {}); } else setErr("Gagal mendaftar");
+      setBusy(false);
+    }
   };
   return (
     <>
@@ -30,8 +39,9 @@ export default function Daftar() {
           <Field label="Password" type="password" value={f.pw} onChange={(e) => setF({ ...f, pw: e.target.value })} />
           <div><p className="mb-2 text-xs font-medium">Daftar sebagai</p>
             <Toggle2 value={role} onChange={setRole} options={[{ v: "pengunjung", label: "Pengunjung" }, { v: "panitia", label: "Panitia" }]} /></div>
+          {Object.values(fe).length > 0 && <ul className="text-xs text-danger">{Object.entries(fe).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>}
           {err && <p role="alert" className="text-xs font-medium text-danger">{err}</p>}
-          <Button type="submit">Daftar</Button>
+          <Button type="submit" disabled={busy}>{busy ? "Memproses…" : "Daftar"}</Button>
         </form>
         <p className="mt-6 text-center text-xs">Sudah punya akun? <Link href="/login" className="font-semibold text-primary">Masuk</Link></p>
       </main>

@@ -7,27 +7,26 @@ import { Header, Button, Empty } from "@/components/ui";
 import { Screen } from "@/components/Screen";
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/Toast";
-import { useDB } from "@/lib/api";
-import { qrPayload } from "@/lib/qr";
-import { getPlace } from "@/lib/data";
+import { regenerateQr, useEvent, useQr } from "@/lib/api";
+import { Modal } from "@/components/ui";
 
 /** P-06 QR Peta · P-06b toast "QR tersimpan"/"Tautan disalin" · P-06c Pratinjau Cetak */
 function QrPage() {
   const { id } = useParams<{ id: string }>();
-  const db = useDB();
+  const { data: e, isLoading } = useEvent(id);
+  const { data: qr } = useQr(id);
   const toast = useToast();
-  const e = db.events.find((x) => x.id === id);
-  const [url, setUrl] = useState("");
+  const url = qr?.url ?? "";
   const [png, setPng] = useState("");
   const [print, setPrint] = useState(false);
+  const [regen, setRegen] = useState(false);
   useEffect(() => {
-    if (!e) return;
-    const u = qrPayload(location.origin, e.id);
-    setUrl(u);
-    QRCode.toDataURL(u, { width: 720, margin: 2, color: { dark: "#1E3A8A", light: "#FFFFFF" }, errorCorrectionLevel: "M" }).then(setPng);
-  }, [e]);
+    if (!url) return;
+    QRCode.toDataURL(url, { width: 720, margin: 2, color: { dark: "#1E3A8A", light: "#FFFFFF" }, errorCorrectionLevel: "M" }).then(setPng);
+  }, [url]);
+  if (isLoading) return <Screen header={<Header title="QR Peta" />}><p className="text-sm text-ink-2">Memuat…</p></Screen>;
   if (!e) return <Screen header={<Header title="QR Peta" />}><Empty title="Event tidak ditemukan" /></Screen>;
-  const download = () => { const a = document.createElement("a"); a.href = png; a.download = `qr-peta-${e.id}.png`; a.click(); toast("QR tersimpan"); };
+  const download = () => { const a = document.createElement("a"); a.href = `/api/events/${e.id}/qr/png`; a.download = `qr-peta-${e.id}.png`; a.click(); toast("QR tersimpan"); };
   const share = async () => {
     try { if (navigator.share) await navigator.share({ title: e.name, url }); else { await navigator.clipboard.writeText(url); toast("Tautan QR disalin"); } }
     catch { toast("Tautan QR disalin"); }
@@ -43,7 +42,7 @@ function QrPage() {
         <div className="mx-auto flex aspect-[1/1.414] w-full flex-col items-center justify-center rounded bg-white p-6 text-center shadow print:shadow-none">
           <p className="text-xs font-semibold tracking-widest text-primary">WAYO · SCAN UNTUK PETA</p>
           <h2 className="mt-2 text-xl font-bold">{e.name}</h2>
-          <p className="text-xs text-ink-2">{getPlace(e.placeId)?.name}</p>
+          <p className="text-xs text-ink-2">{e.place?.name}</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {png && <img src={png} alt={`QR Peta ${e.name}`} className="mt-4 w-3/4" />}
           <p className="mt-3 text-xs text-ink-2">Buka kamera / aplikasi WAYO lalu arahkan ke QR</p>
@@ -65,7 +64,16 @@ function QrPage() {
           <Button variant="secondary" onClick={share}><Icon name="share" size={18} />Bagikan</Button>
           <Button variant="secondary" onClick={() => setPrint(true)}><Icon name="print" size={18} />Cetak</Button>
         </div>
+        <Button variant="ghost" onClick={() => setRegen(true)}>Buat ulang QR</Button>
       </div>
+      <Modal open={regen} onClose={() => setRegen(false)}>
+        <h2 className="text-lg font-semibold">Buat ulang QR?</h2>
+        <p className="mt-1 text-sm text-ink-2">QR lama yang sudah dicetak tidak akan berlaku lagi.</p>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Button variant="secondary" onClick={() => setRegen(false)}>Batal</Button>
+          <Button onClick={async () => { await regenerateQr(e.id); setRegen(false); toast("QR baru dibuat"); }}>Buat ulang</Button>
+        </div>
+      </Modal>
     </Screen>
   );
 }

@@ -4,17 +4,13 @@ import { Guard } from "@/components/Guard";
 import { Header, Button, Badge, Empty } from "@/components/ui";
 import { Screen } from "@/components/Screen";
 import { Icon } from "@/components/Icon";
-import { useDB } from "@/lib/api";
-import { useSession } from "@/lib/auth";
-import { eventStatus, fmtDate, getPlace } from "@/lib/data";
-import { myOrganizerId } from "@/lib/panitia";
+import { useEvents } from "@/lib/api";
+import { eventStatus, fmtDate } from "@/lib/data";
 
 /** P-01 Kelola — event milik saya + status */
 function Kelola() {
-  const db = useDB();
-  const s = useSession();
-  const org = myOrganizerId(s?.email);
-  const mine = db.events.filter((e) => e.organizerId === org);
+  const { data, isLoading } = useEvents("?mine=1");
+  const mine = data ?? [];
   return (
     <Screen nav header={<Header title="Kelola Event" back={false} />}>
       <Button href="/panitia/event/baru"><Icon name="plus" size={18} />Event</Button>
@@ -27,13 +23,13 @@ function Kelola() {
                 <h3 className="text-base font-semibold">{e.name}</h3>
                 <Badge tone={st === "selesai" ? "gray" : st === "berlangsung" ? "green" : "primary"}>{st === "selesai" ? "Selesai" : st === "berlangsung" ? "Berlangsung" : "Terjadwal"}</Badge>
               </div>
-              <p className="mt-1 text-xs text-ink-2">{fmtDate(e.start)} · {getPlace(e.placeId)?.name ?? "-"}</p>
-              <p className="mt-1 text-xs text-ink-2">{db.pins.filter((p) => p.eventId === e.id).length} pin</p>
+              <p className="mt-1 text-xs text-ink-2">{fmtDate(e.start)} · {e.place?.name ?? "-"}</p>
+              <p className="mt-1 text-xs text-ink-2">{e.registrantCount ?? 0} pendaftar</p>
             </Link></li>
           );
         })}
       </ul>
-      {!mine.length && <Empty title="Belum ada event" sub="Tekan + Event untuk membuat." />}
+      {!isLoading && !mine.length && <Empty title="Belum ada event" sub="Tekan + Event untuk membuat." />}
     </Screen>
   );
 }

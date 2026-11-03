@@ -5,34 +5,36 @@ import { Button, Field, Header } from "./ui";
 import { Screen } from "./Screen";
 import { MapView } from "./MapView";
 import { useToast } from "./Toast";
-import { saveEvent } from "@/lib/api";
-import { campuses, places, faculties } from "@/lib/data";
-import { fromLocalInput, myOrganizerId, toLocalInput } from "@/lib/panitia";
-import { useSession } from "@/lib/auth";
+import { ApiError, saveEvent, usePlaces } from "@/lib/api";
+import { campuses, faculties } from "@/lib/data";
+import { fromLocalInput, toLocalInput } from "@/lib/panitia";
 import type { WEvent } from "@/lib/types";
 
 /** P-02 Tambah/Edit Event (lokasi dipilih dengan tap pin tempat di peta) */
 export function EventForm({ initial }: { initial?: WEvent }) {
   const r = useRouter();
   const toast = useToast();
-  const s = useSession();
+  const { data: places = [] } = usePlaces();
   const [f, setF] = useState({
     name: initial?.name ?? "", description: initial?.description ?? "", faculty: initial?.faculty ?? "Teknik",
-    start: toLocalInput(initial?.start), end: toLocalInput(initial?.end), placeId: initial?.placeId ?? places[0].id,
+    start: toLocalInput(initial?.start), end: toLocalInput(initial?.end), placeId: initial?.placeId ?? "",
   });
   const [err, setErr] = useState("");
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!f.name || !f.start || !f.end) return setErr("Nama dan jadwal wajib diisi");
     if (new Date(f.end) <= new Date(f.start)) return setErr("Waktu selesai harus setelah waktu mulai");
-    const ev: WEvent = {
-      id: initial?.id ?? `ev-${Date.now()}`, organizerId: initial?.organizerId ?? myOrganizerId(s?.email), poster: initial?.poster ?? "",
-      speakers: initial?.speakers ?? [], facilities: initial?.facilities ?? [], name: f.name, description: f.description, faculty: f.faculty,
-      start: fromLocalInput(f.start), end: fromLocalInput(f.end), placeId: f.placeId,
-    };
-    await saveEvent(ev);
-    toast("Event tersimpan");
-    r.replace(`/panitia/event/${ev.id}`);
+    if (!f.placeId) return setErr("Pilih lokasi dengan tap pin di peta");
+    try {
+      const ev = await saveEvent({
+        id: initial?.id, poster: initial?.poster ?? "", speakers: initial?.speakers ?? [], facilities: initial?.facilities ?? [],
+        name: f.name, description: f.description, faculty: f.faculty, start: fromLocalInput(f.start), end: fromLocalInput(f.end), placeId: f.placeId,
+      });
+      toast("Event tersimpan");
+      r.replace(`/panitia/event/${ev.id}`);
+    } catch (x) {
+      setErr(x instanceof ApiError ? Object.values(x.fields ?? {})[0] ?? x.message : "Gagal menyimpan");
+    }
   };
   const sel = places.find((p) => p.id === f.placeId);
   return (
@@ -46,7 +48,7 @@ export function EventForm({ initial }: { initial?: WEvent }) {
           <select value={f.faculty} onChange={(e) => setF({ ...f, faculty: e.target.value })} className="h-12 w-full rounded-lg border border-line bg-muted px-3 text-sm">{faculties.map((x) => <option key={x}>{x}</option>)}</select></label>
         <Field label="Mulai" type="datetime-local" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} />
         <Field label="Selesai" type="datetime-local" value={f.end} onChange={(e) => setF({ ...f, end: e.target.value })} />
-        <div><span className="mb-2 block text-xs font-medium">Lokasi — tap pin di peta: <b>{sel?.name}</b></span>
+        <div><span className="mb-2 block text-xs font-medium">Lokasi — tap pin di peta: <b>{sel?.name ?? "belum dipilih"}</b></span>
           <div className="h-48 overflow-hidden rounded-xl border border-line">
             <MapView center={campuses.sudirman.center} zoom={17} markers={places.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, cat: p.category, label: p.name, selected: p.id === f.placeId }))} onMarker={(id) => setF({ ...f, placeId: id })} />
           </div></div>

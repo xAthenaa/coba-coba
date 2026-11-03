@@ -3,14 +3,14 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { useItem } from "@/lib/mapItems";
-import { useDB } from "@/lib/store";
+import { useEvents } from "@/lib/api";
 
 /** V-08 Sampai Tujuan */
 export default function Sampai() {
   const { id } = useParams<{ id: string }>();
   const it = useItem(id);
-  const db = useDB();
-  const ev = db.events.find((e) => e.placeId === id || e.id === it?.pin?.eventId);
+  const { data: events = [] } = useEvents();
+  const ev = events.find((e) => e.placeId === id || e.id === it?.pin?.eventId);
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
       <div className="flex h-28 w-28 items-center justify-center rounded-full bg-green-100 text-success"><Icon name="check" size={60} strokeWidth={3} /></div>

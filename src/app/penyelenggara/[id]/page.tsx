@@ -3,17 +3,16 @@ import { useParams } from "next/navigation";
 import { Header, Empty } from "@/components/ui";
 import { Screen } from "@/components/Screen";
 import { EventCard } from "@/components/EventCard";
-import { getOrganizer } from "@/lib/data";
-import { useDB } from "@/lib/store";
+import { useOrganizer } from "@/lib/api";
 import { initials } from "@/lib/auth";
 
 /** V-12 Detail Penyelenggara */
 export default function DetailOrg() {
   const { id } = useParams<{ id: string }>();
-  const db = useDB();
-  const o = getOrganizer(id);
+  const { data: o, isLoading } = useOrganizer(id);
+  if (isLoading) return <Screen header={<Header title="Penyelenggara" />}><p className="text-sm text-ink-2">Memuat…</p></Screen>;
   if (!o) return <Screen header={<Header title="Penyelenggara" />}><Empty title="Penyelenggara tidak ditemukan" /></Screen>;
-  const evs = db.events.filter((e) => e.organizerId === o.id);
+  const evs = o.events;
   return (
     <Screen header={<Header title="Penyelenggara" />}>
       <div className="flex flex-col items-center text-center">

@@ -5,7 +5,7 @@ import { Button, Field, Header, Modal, Toggle2, Chip } from "./ui";
 import { Screen } from "./Screen";
 import { MapView } from "./MapView";
 import { useToast } from "./Toast";
-import { deletePin, savePin } from "@/lib/api";
+import { ApiError, deletePin, savePin } from "@/lib/api";
 import { campuses } from "@/lib/data";
 import { fromLocalInput, toLocalInput } from "@/lib/panitia";
 import { tokens, categoryLabel } from "@/lib/tokens";
@@ -31,9 +31,9 @@ export function PinForm({ eventId, initial }: { eventId: string; initial?: Pin }
     if (type === "timed" && (!start || !end)) return setErr("Tanggal-jam pasang & hapus wajib untuk pin berbasis waktu");
     if (type === "timed" && new Date(end) <= new Date(start)) return setErr("Waktu hapus harus setelah waktu pasang");
     try {
-      await savePin({ id: initial?.id ?? `pin-${Date.now()}`, eventId, label, category: cat, type, ...pt, ...(type === "timed" ? { start: fromLocalInput(start), end: fromLocalInput(end) } : {}) });
+      await savePin({ id: initial?.id, eventId, label, category: cat, type, ...pt, ...(type === "timed" ? { start: fromLocalInput(start), end: fromLocalInput(end) } : {}) });
       toast("Pin tersimpan"); r.replace(back);
-    } catch (x) { setErr((x as Error).message); }
+    } catch (x) { setErr(x instanceof ApiError ? Object.values(x.fields ?? {})[0] ?? x.message : (x as Error).message); }
   };
   return (
     <Screen header={<Header title={initial ? "Edit Pin" : "Tambah Pin"} backHref={back} />} padded={false}>
@@ -61,7 +61,7 @@ export function PinForm({ eventId, initial }: { eventId: string; initial?: Pin }
         <p className="mt-1 text-sm text-ink-2">“{label}” akan hilang dari peta pengunjung.</p>
         <div className="mt-5 grid grid-cols-2 gap-3">
           <Button variant="secondary" onClick={() => setDel(false)}>Batal</Button>
-          <Button variant="danger" onClick={async () => { await deletePin(initial!.id); toast("Pin dihapus"); r.replace(back); }}>Hapus</Button>
+          <Button variant="danger" onClick={async () => { await deletePin(initial!.id, eventId); toast("Pin dihapus"); r.replace(back); }}>Hapus</Button>
         </div>
       </Modal>
     </Screen>

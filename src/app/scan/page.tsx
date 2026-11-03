@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Guard } from "@/components/Guard";
 import { Icon } from "@/components/Icon";
 import { Button, BackButton } from "@/components/ui";
-import { useDB } from "@/lib/store";
-import { parseQr } from "@/lib/qr";
+import { ApiError, api, resolveQr } from "@/lib/api";
+import { parseQrCode } from "@/lib/qr";
 
 type CamState = "starting" | "on" | "nocam";
 
@@ -30,20 +30,31 @@ function Izin({ onAllow }: { onAllow: () => void }) {
 /** V-10a Izin Kamera → V-10 Scan QR · V-10s Senter menyala · V-10b QR tidak valid. Ada "Simulasi scan" + input manual untuk perangkat tanpa kamera. */
 function Scanner() {
   const r = useRouter();
-  const db = useDB();
   const [cam, setCam] = useState<CamState>("starting");
   const [torch, setTorch] = useState(false);
   const [invalid, setInvalid] = useState(false);
   const [manual, setManual] = useState("");
   const scRef = useRef<import("html5-qrcode").Html5Qrcode | null>(null);
-  const ids = db.events.map((e) => e.id);
   const handled = useRef(false);
+  const busy = useRef(false);
+  const [sample, setSample] = useState<{ code: string; name: string } | null>(null);
+  useEffect(() => { api<{ code: string; name: string }>("/api/dev/qr-sample").then(setSample).catch(() => setSample(null)); }, []);
 
-  const handle = (text: string) => {
-    if (handled.current) return;
-    const id = parseQr(text, ids);
-    if (id) { handled.current = true; try { if (scRef.current?.isScanning) scRef.current.stop().catch(() => {}); } catch { /* ignore */ } r.push(`/peta/event/${id}`); }
-    else setInvalid(true);
+  /** Kode QR → GET /api/qr/:code (wajib login) → /peta/event/:eventId. 404 → "QR tidak valid". */
+  const handle = async (text: string) => {
+    if (handled.current || busy.current) return;
+    const code = parseQrCode(text);
+    if (!code) return setInvalid(true);
+    busy.current = true;
+    try {
+      const t = await resolveQr(code);
+      handled.current = true;
+      try { if (scRef.current?.isScanning) scRef.current.stop().catch(() => {}); } catch { /* ignore */ }
+      r.push(`/peta/event/${t.eventId}`);
+    } catch (x) {
+      if (x instanceof ApiError && x.status === 401) r.push(`/login?next=${encodeURIComponent(`/q/${code}`)}`);
+      else setInvalid(true);
+    } finally { busy.current = false; }
   };
   const handleRef = useRef(handle);
   handleRef.current = handle;
@@ -69,7 +80,6 @@ function Scanner() {
     setTorch(next);
     try { await scRef.current?.applyVideoConstraints({ advanced: [{ torch: next } as MediaTrackConstraintSet] }); } catch { /* senter tidak didukung: tetap tampilkan state UI */ }
   };
-  const sample = db.events.find((e) => e.id === "ev-invention") ?? db.events[0];
 
   return (
     <main className="relative flex flex-1 flex-col overflow-y-auto bg-gray-950 px-6 pb-6 pt-4 text-gray-50">
@@ -85,9 +95,9 @@ function Scanner() {
       </div>
       <p className="mt-4 text-center text-sm text-gray-200">Arahkan kamera ke QR Peta event{torch ? " · Senter menyala" : ""}</p>
       <div className="mt-6 space-y-3">
-        <Button onClick={() => handle(`wayo:${sample.id}`)}>Simulasi scan ({sample.name.replace(" (contoh)", "")})</Button>
+        {sample && <Button onClick={() => handle(`${location.origin}/q/${sample.code}`)}>Simulasi scan ({sample.name.replace(" (contoh)", "")})</Button>}
         <form onSubmit={(e) => { e.preventDefault(); handle(manual); }} className="flex gap-2">
-          <input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Kode/URL QR, mis. ev-invention" aria-label="Kode QR manual"
+          <input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Kode atau URL QR (…/q/kode)" aria-label="Kode QR manual"
             className="h-12 flex-1 rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white placeholder:text-gray-300 outline-none" />
           <button className="h-12 rounded-lg bg-white px-4 text-sm font-semibold text-primary">Buka</button>
         </form>
@@ -98,7 +108,7 @@ function Scanner() {
           <div className="w-full rounded-t-2xl bg-white p-6 text-ink">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-danger"><Icon name="close" size={32} /></div>
             <h2 className="mt-3 text-center text-lg font-semibold">QR tidak valid</h2>
-            <p className="mt-1 text-center text-sm text-ink-2">QR ini bukan QR Peta WAYO atau event-nya sudah dihapus.</p>
+            <p className="mt-1 text-center text-sm text-ink-2">QR ini bukan QR Peta WAYO, sudah diganti panitia, atau event-nya sudah selesai/dihapus.</p>
             <div className="mt-5 space-y-3"><Button onClick={() => setInvalid(false)}>Coba lagi</Button><Button variant="secondary" href="/peta">Buka Peta Kampus</Button></div>
           </div>
         </div>
@@ -108,5 +118,5 @@ function Scanner() {
 }
 export default function Page() {
   const [step, setStep] = useState<"izin" | "scan">("izin");
-  return <Guard allow={["pengunjung", "panitia"]} msg="Scan QR memerlukan login">{step === "izin" ? <Izin onAllow={() => setStep("scan")} /> : <Scanner />}</Guard>;
+  return <Guard allow={["pengunjung"]} msg="Scan QR khusus pengunjung">{step === "izin" ? <Izin onAllow={() => setStep("scan")} /> : <Scanner />}</Guard>;
 }

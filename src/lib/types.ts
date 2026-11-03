@@ -3,7 +3,7 @@ export type CampusId = "sudirman" | "jimbaran";
 export interface LatLng { lat: number; lng: number }
 export interface Place extends LatLng {
   id: string; name: string; category: Category; campus: CampusId;
-  hours?: string; description?: string;
+  hours?: string; description?: string; distanceM?: number; walkMin?: number;
 }
 export interface Organizer { id: string; name: string; logo: string; description: string; contact: string; faculty: string }
 export interface WEvent {

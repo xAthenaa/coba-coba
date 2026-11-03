@@ -5,30 +5,32 @@ import { BackButton, Button, Badge, Empty } from "@/components/ui";
 import { Poster } from "@/components/Poster";
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/Toast";
-import { useDB } from "@/lib/store";
-import { registerEvent } from "@/lib/api";
+import { registerEvent, useEvent, usePlaceIndex } from "@/lib/api";
 import { useSession } from "@/lib/auth";
-import { campuses, eventStatus, fmtRange, getOrganizer, getPlace } from "@/lib/data";
+import { campuses, eventStatus, fmtRange } from "@/lib/data";
 
 /** V-02 Detail Event · V-02b (toast terdaftar) · V-02c Event Selesai (abu + label, Rute nonaktif) */
 export default function DetailEvent() {
   const { id } = useParams<{ id: string }>();
-  const db = useDB();
+  const { data: e, error, isLoading } = useEvent(id);
+  const { place: getPlace } = usePlaceIndex();
   const r = useRouter();
   const toast = useToast();
   const s = useSession();
-  const e = db.events.find((x) => x.id === id);
-  if (!e) return <main className="flex-1 p-6"><BackButton /><Empty title="Event tidak ditemukan" /></main>;
-  const pl = getPlace(e.placeId);
-  const org = getOrganizer(e.organizerId);
+  if (isLoading) return <main className="flex flex-1 items-center justify-center text-sm text-ink-2">Memuat…</main>;
+  if (!e) return <main className="flex-1 p-6"><BackButton /><Empty title="Event tidak ditemukan" sub={error && error.status !== 404 ? error.message : undefined} /></main>;
+  const pl = e.place;
+  const org = { id: e.organizerId, name: e.organizerName ?? "Penyelenggara" };
   const st = eventStatus(e);
   const done = st === "selesai";
-  const reg = db.registered.includes(e.id);
-  const daftar = () => {
-    if (s?.role === "tamu") { toast("Masuk dulu untuk mendaftar event", "error"); return r.push("/login?perlu=login"); }
-    void registerEvent(e.id);
-    toast("Kamu terdaftar");
-    setTimeout(() => r.push("/event-saya"), 1200);
+  const reg = !!e.registered;
+  const isPanitia = s?.role === "panitia";
+  const daftar = async () => {
+    try {
+      await registerEvent(e.id);
+      toast("Kamu terdaftar");
+      setTimeout(() => r.push("/event-saya"), 1200);
+    } catch (x) { toast(x instanceof Error ? x.message : "Gagal mendaftar", "error"); }
   };
   return (
     <main className={`relative flex-1 overflow-y-auto pb-6 ${done ? "grayscale-[.6]" : ""}`}>
@@ -42,7 +44,8 @@ export default function DetailEvent() {
         <div className="grid grid-cols-1 gap-3 rounded-xl bg-soft p-4 text-sm">
           <p className="flex gap-2"><Icon name="calendar" size={18} className="text-primary" />{fmtRange(e.start, e.end)}</p>
           <p className="flex gap-2"><Icon name="pin" size={18} className="text-primary" />{pl?.name}, {pl && campuses[pl.campus].name}</p>
-          {org && <Link href={`/penyelenggara/${org.id}`} className="flex gap-2 font-medium text-primary"><Icon name="user" size={18} />{org.name} ›</Link>}
+          <Link href={`/penyelenggara/${org.id}`} className="flex gap-2 font-medium text-primary"><Icon name="user" size={18} />{org.name} ›</Link>
+          <Link href="/penyelenggara" className="pl-[26px] text-xs font-medium text-primary underline">Lihat semua penyelenggara</Link>
         </div>
         <section><h2 className="mb-1 text-base font-semibold">Deskripsi</h2><p className="text-sm text-ink-2">{e.description}</p></section>
         {e.speakers.length > 0 && <section><h2 className="mb-1 text-base font-semibold">Narasumber</h2><p className="text-sm text-ink-2">{e.speakers.join(", ")}</p></section>}
@@ -55,7 +58,7 @@ export default function DetailEvent() {
           </div>
         ) : (
           <div className="space-y-3 pt-2">
-            {reg ? <Button disabled>✓ Sudah terdaftar</Button> : <Button onClick={daftar}>Daftar Sekarang</Button>}
+            {isPanitia ? null : reg ? <Button disabled>✓ Sudah terdaftar</Button> : <Button onClick={daftar}>Daftar Sekarang</Button>}
             <div className="grid grid-cols-2 gap-3">
               <Button variant="secondary" href={`/peta?fokus=${e.placeId}`}>Lihat di peta</Button>
               <Button variant="secondary" href={`/peta/rute/${e.placeId}?event=${e.id}`}>Rute ke lokasi</Button>
