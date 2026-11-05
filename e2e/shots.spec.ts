@@ -12,7 +12,7 @@ test("screenshots", async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto("/"); await shot(page, "S-00_splash", 300);
   await page.goto("/login"); await shot(page, "L-01_login", 500);
-  await page.getByRole("button", { name: "Panitia" }).click(); await shot(page, "L-01-panitia", 300);
+
   await page.goto("/izin-lokasi"); await shot(page, "L-03_izin-lokasi", 500);
   await page.goto("/lupa-password"); await shot(page, "L-05_lupa-password", 500);
   await login(page, "pengunjung");

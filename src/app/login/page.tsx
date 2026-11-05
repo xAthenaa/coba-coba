@@ -2,15 +2,14 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { Button, Field, Toggle2, Banner } from "@/components/ui";
+import { Button, Field, Banner } from "@/components/ui";
 import { login } from "@/lib/auth";
 import { LOC_PREF } from "@/lib/useGeo";
 
-/** L-01 Login (L-01-panitia = toggle Panitia aktif). Login ke POST /api/auth/login; cookie sesi httpOnly diset server. Tanpa mode tamu. */
+/** L-01 Login: peran ditentukan dari akun (tanpa toggle; pilihan peran hanya di Daftar). Login ke POST /api/auth/login; cookie sesi httpOnly diset server. Tanpa mode tamu. */
 function Login() {
   const r = useRouter();
   const q = useSearchParams();
-  const [role, setRole] = useState<"pengunjung" | "panitia">(q.get("peran") === "panitia" ? "panitia" : "pengunjung");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
@@ -25,7 +24,6 @@ function Login() {
     setBusy(true); setErr("");
     try {
       const u = await login(email.trim(), pw);
-      if (u.role !== role) setErr(`Akun ini terdaftar sebagai ${u.role === "panitia" ? "Panitia" : "Pengunjung"} — dialihkan…`);
       afterLogin(u.role);
     } catch (x) {
       setErr(x instanceof Error ? x.message : "Gagal masuk");
@@ -46,14 +44,10 @@ function Login() {
           <Field label="Password" type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••" autoComplete="current-password" />
           <Link href="/lupa-password" className="mt-2 inline-block text-xs text-primary">Lupa Password?</Link>
         </div>
-        <div>
-          <p className="mb-2 text-xs font-medium">Masuk sebagai</p>
-          <Toggle2 value={role} onChange={(v) => { setRole(v); setErr(""); }} options={[{ v: "pengunjung", label: "Pengunjung" }, { v: "panitia", label: "Panitia" }]} />
-        </div>
         {err && <p role="alert" className="text-xs font-medium text-danger">{err}</p>}
         <Button type="submit" disabled={busy}>{busy ? "Memproses…" : "Login"}</Button>
       </form>
-      <p className="mt-3 text-center text-xs text-ink-2">Demo (contoh): {role === "panitia" ? "panitia@contoh.id" : "pengunjung@contoh.id"} / demo123</p>
+      <p className="mt-3 text-center text-xs text-ink-2">Demo (contoh): panitia@contoh.id atau pengunjung@contoh.id / demo123</p>
       <p className="mt-6 text-center text-xs text-ink">Belum memiliki akun? <Link href="/daftar" className="font-semibold text-primary">Daftar sekarang</Link></p>
     </main>
   );
