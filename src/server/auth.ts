@@ -10,17 +10,19 @@ export const ROLE_COOKIE = "wayo_role"; // petunjuk UI/middleware saja; otorisas
 const WEEK = 7 * 24 * 3600;
 export const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
+const cookieBase = () => ({ sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/" });
 export async function startSession(res: NextResponse, user: User) {
   const token = randomBytes(32).toString("hex");
   await db.session.create({ data: { tokenHash: sha256(token), userId: user.id, expiresAt: new Date(Date.now() + WEEK * 1000) } });
-  const base = { sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: WEEK };
+  const base = { ...cookieBase(), maxAge: WEEK };
   res.cookies.set(COOKIE, token, { ...base, httpOnly: true });
   res.cookies.set(ROLE_COOKIE, user.role, { ...base, httpOnly: false });
   return res;
 }
 export function clearCookies(res: NextResponse) {
-  res.cookies.set(COOKIE, "", { path: "/", maxAge: 0 });
-  res.cookies.set(ROLE_COOKIE, "", { path: "/", maxAge: 0 });
+  const gone = { ...cookieBase(), maxAge: 0, expires: new Date(0) };
+  res.cookies.set(COOKIE, "", { ...gone, httpOnly: true });
+  res.cookies.set(ROLE_COOKIE, "", { ...gone, httpOnly: false });
   return res;
 }
 

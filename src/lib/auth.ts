@@ -29,8 +29,12 @@ export async function register(body: { name: string; email: string; password: st
   return u;
 }
 export async function logout() {
-  await api("/api/auth/logout", { method: "POST" }).catch(() => {});
-  await mutate(() => true, undefined, { revalidate: false });
-  await mutate("/api/me", null, false);
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } finally {
+    // Cache klien tetap dibersihkan; galat server tetap dilempar ke pemanggil.
+    await mutate(() => true, undefined, { revalidate: false });
+    await mutate("/api/me", null, false);
+  }
 }
 export const initials = (n: string) => n.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();

@@ -13,11 +13,8 @@ export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const hasSession = !!req.cookies.get("wayo_session")?.value;
   const role = req.cookies.get("wayo_role")?.value;
-  if (starts(pathname, PUBLIC) && pathname !== "/") {
-    if (hasSession && pathname === "/login") return NextResponse.redirect(new URL(role === "ORGANIZER" ? "/panitia" : "/home", req.url));
-    return NextResponse.next();
-  }
-  if (pathname === "/") return NextResponse.next();
+  // Halaman publik (termasuk "/" dan "/login") selalu lolos; jangan alihkan berdasar cookie yang belum divalidasi.
+  if (starts(pathname, PUBLIC)) return NextResponse.next();
   if (!hasSession) {
     const url = new URL("/login", req.url);
     url.searchParams.set("next", pathname + search);
