@@ -20,7 +20,7 @@ async function main() {
   ]) await db.campus.upsert({ where: { id: c.id }, create: c, update: c });
 
   for (const p of places.places) {
-    const d = { name: p.name, category: p.category.toUpperCase(), lat: p.lat, lng: p.lng, campusId: "sudirman" };
+    const d = { name: p.name, category: p.category.toUpperCase(), lat: p.lat, lng: p.lng, campusId: ("campusId" in p && p.campusId) || "sudirman" };
     await db.place.upsert({ where: { id: p.id }, create: { id: p.id, ...d }, update: d });
   }
   for (const u of users.users) {

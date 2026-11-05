@@ -56,7 +56,7 @@ export function PetaView({ qrEventId }: { qrEventId?: string }) {
       <div className="relative min-h-0 flex-1">
         <div className="absolute inset-x-3 top-3 z-[600] space-y-2 pr-16">
           {qrEvent && <Banner tone="info" action={<Link href={`/event/${qrEvent.id}`} className="font-semibold underline">Lihat event</Link>}>Peta dari QR: {qrEvent.name}</Banner>}
-          {campus === "jimbaran" && <Banner tone="info">Peta Kampus Jimbaran belum tersedia (data contoh hanya Sudirman).</Banner>}
+          {campus === "jimbaran" && items.length > 0 && !items.some((i) => i.campus === "jimbaran") && <Banner tone="info">Belum ada tempat di Kampus Jimbaran.</Banner>}
           {geo.state === "offline" && <Banner>Offline — menampilkan peta tersimpan (contoh).</Banner>}
           {locBad && <Banner action={<Link href="/izin-lokasi?status=ditolak" className="font-semibold underline">Aktifkan</Link>}>Lokasi {geo.state === "off" ? "GPS mati" : "ditolak"}.</Banner>}
           {geo.state === "simulated" && locOn && <Banner tone="info">Kamu di luar kampus — memakai posisi simulasi.</Banner>}

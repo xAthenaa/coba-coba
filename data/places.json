@@ -91,7 +91,104 @@
    "category": "info",
    "lat": -8.6719,
    "lng": 115.2184
+  },
+  {
+   "id": "pl-jb-rektorat",
+   "name": "Rektorat Universitas Udayana",
+   "category": "gedung",
+   "lat": -8.79822,
+   "lng": 115.17239,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-widyasabha",
+   "name": "Auditorium Widya Sabha",
+   "category": "gedung",
+   "lat": -8.79809,
+   "lng": 115.17187,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-central",
+   "name": "Central Office Udayana University",
+   "category": "info",
+   "lat": -8.7985,
+   "lng": 115.17238,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-lppm",
+   "name": "Gedung LPPM",
+   "category": "gedung",
+   "lat": -8.79861,
+   "lng": 115.17314,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-fkp",
+   "name": "Fakultas Kelautan dan Perikanan",
+   "category": "gedung",
+   "lat": -8.79799,
+   "lng": 115.17015,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-ftp",
+   "name": "Fakultas Teknologi Pertanian",
+   "category": "gedung",
+   "lat": -8.79831,
+   "lng": 115.17031,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-fh",
+   "name": "Fakultas Hukum",
+   "category": "gedung",
+   "lat": -8.79881,
+   "lng": 115.16668,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-halte-fmipa",
+   "name": "Halte Fakultas MIPA Barat",
+   "category": "info",
+   "lat": -8.79841,
+   "lng": 115.17095,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-halte-ft",
+   "name": "Halte Fakultas Teknik Barat",
+   "category": "info",
+   "lat": -8.79516,
+   "lng": 115.17574,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-kantin-rusunawa",
+   "name": "Kantin Rusunawa",
+   "category": "kantin",
+   "lat": -8.79834,
+   "lng": 115.16275,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-kantin1",
+   "name": "Kantin 1",
+   "category": "kantin",
+   "lat": -8.79901,
+   "lng": 115.16183,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-jb-pura-saraswati",
+   "name": "Pura Widya Maha Saraswati",
+   "category": "info",
+   "lat": -8.79699,
+   "lng": 115.17335,
+   "campusId": "jimbaran"
   }
  ],
- "campus": "Sudirman"
+ "campus": "Sudirman",
+ "_catatan_jimbaran": "Tempat pl-jb-* (campusId jimbaran): koordinat dari OpenStreetMap via Nominatim, dicek 2026-11-05."
 }

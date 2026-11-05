@@ -3,7 +3,7 @@ import type { CampusId, LatLng, Pin, WEvent, EventStatus, PinStatus } from "./ty
 
 export const campuses: Record<CampusId, { id: CampusId; name: string; center: LatLng }> = {
   sudirman: { id: "sudirman", name: "Kampus Sudirman", center: { lat: -8.6724, lng: 115.2187 } },
-  // Peta Jimbaran belum dibuat (design-notes UPDATE 13): hanya titik tengah, tanpa data tempat.
+  // Tempat Jimbaran (pl-jb-*) dari OSM; titik tengah kira-kira Rektorat/Widya Sabha.
   jimbaran: { id: "jimbaran", name: "Kampus Jimbaran", center: { lat: -8.7985, lng: 115.17 } },
 };
 export const DEFAULT_CAMPUS: CampusId = "sudirman";

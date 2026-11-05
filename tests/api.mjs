@@ -53,7 +53,7 @@ async function main() {
   if (prisma) {
     const count = async () => ({ e: await prisma.event.count({ where: { id: { in: ["ev-webinar", "ev-invention", "ev-pkkmb"] } } }), o: await prisma.organizer.count({ where: { id: { in: ["org-ft", "org-hmif", "org-bem"] } } }), p: await prisma.place.count(), pin: await prisma.pin.count({ where: { id: { startsWith: "pin-" } } }), u: await prisma.user.count({ where: { id: { in: ["u-pengunjung", "u-panitia"] } } }), qr: await prisma.qrMap.count({ where: { eventId: { in: ["ev-webinar", "ev-invention", "ev-pkkmb"] } } }) });
     const before = await count();
-    check("G-03 jumlah seed = isi JSON (3 event, 3 org, 11 tempat, 5 pin, 2 user JSON, 3 QR)", before.e === 3 && before.o === 3 && before.p === 11 && before.pin === 5 && before.u === 2 && before.qr === 3, before);
+    check("G-03 jumlah seed = isi JSON (3 event, 3 org, 23 tempat, 5 pin, 2 user JSON, 3 QR)", before.e === 3 && before.o === 3 && before.p === 23 && before.pin === 5 && before.u === 2 && before.qr === 3, before);
     if (!process.env.WAYO_SKIP_RESEED) {
       const totals = async () => [await prisma.user.count(), await prisma.place.count(), await prisma.event.count(), await prisma.pin.count(), await prisma.registration.count(), await prisma.notification.count(), await prisma.qrMap.count()].join(",");
       const t0 = await totals();
@@ -270,6 +270,23 @@ async function main() {
   check("D-06 edit pin pemilik -> 200", (await own.patch(`/api/pins/${permPin.id}`, { label: "Pos Uji 2" })).data?.label === "Pos Uji 2");
   check("D-06 hapus pin pemilik -> 204", (await own.del(`/api/pins/${permPin.id}`)).status === 204);
   check("D-06 hapus pin tak ada -> 404", (await own.del(`/api/pins/${permPin.id}`)).status === 404);
+  // ---------- D-07 hapus pin: urutan 401 → 403 → 404, sukses 204 ----------
+  const dp = (await own.post("/api/events/ev-invention/pins", { ...pinBase, label: `Hapus ${uniq}`, type: "PERMANENT" })).data;
+  check("D-07 tambah pin (POST) -> 201 + muncul di list", !!dp?.id && (await own.get("/api/events/ev-invention/pins")).data.some((p) => p.id === dp.id), dp);
+  check("D-07 hapus pin tanpa login -> 401", (await anon.del(`/api/pins/${dp.id}`)).status === 401);
+  check("D-07 hapus pin oleh pengunjung -> 403", (await vis.del(`/api/pins/${dp.id}`)).status === 403);
+  check("D-07 hapus pin oleh panitia lain -> 403", (await other.del(`/api/pins/${dp.id}`)).status === 403);
+  check("D-07 hapus pin tak ada tanpa login -> 401", (await anon.del("/api/pins/tidak-ada")).status === 401);
+  check("D-07 hapus pin tak ada oleh pengunjung -> 403", (await vis.del("/api/pins/tidak-ada")).status === 403);
+  check("D-07 hapus pin tak ada oleh panitia -> 404", (await own.del("/api/pins/tidak-ada")).status === 404);
+  const dr = await own.del(`/api/pins/${dp.id}`);
+  check("D-07 hapus pin pemilik -> 204 tanpa body", dr.status === 204 && !dr.text, dr.status);
+  check("D-07 pin terhapus hilang dari list event", !(await own.get("/api/events/ev-invention/pins")).data.some((p) => p.id === dp.id));
+  check("D-07 pin terhapus hilang dari /api/pins", !(await vis.get("/api/pins")).data.some((p) => p.id === dp.id));
+  check("D-07 GET pin terhapus -> 404", (await own.get(`/api/pins/${dp.id}`)).status === 404);
+  // ---------- H Jimbaran ----------
+  const jb = (await vis.get("/api/places?campusId=jimbaran")).data ?? [];
+  check("H-01 Kampus Jimbaran punya >= 10 tempat", jb.length >= 10 && jb.every((p) => p.campusId === "jimbaran" && Math.abs(p.lat + 8.798) < 0.01 && Math.abs(p.lng - 115.17) < 0.01), jb.length);
   // PIN_NEW: daftarkan pengunjung ke ev-invention lalu buat pin
   await vis.post("/api/events/ev-invention/register");
   const pn = (await own.post("/api/events/ev-invention/pins", { ...pinBase, label: "Pin Notif", type: "PERMANENT" })).data;
@@ -319,7 +336,7 @@ async function main() {
   check("F-02 hasil kosong -> 200 []", q2.status === 200 && Array.isArray(q2.data) && q2.data.length === 0);
   check("F-02 filter kategori", (await vis.get("/api/places?category=kantin")).data.every((p) => p.category === "KANTIN"));
   check("F-02 kategori asing -> 400", (await vis.get("/api/places?category=kolam")).status === 400);
-  check("F-02 filter campusId=jimbaran -> []", (await vis.get("/api/places?campusId=jimbaran")).data.length === 0);
+  check("F-02 filter campusId=jimbaran -> hanya jimbaran", (await vis.get("/api/places?campusId=jimbaran")).data.every((p) => p.campusId === "jimbaran"));
   r = await vis.get("/api/places?lat=-8.6736&lng=115.2228");
   const ds = r.data.map((p) => p.distanceM);
   check("F-03 terdekat urut jarak + distanceM/walkMin", r.status === 200 && ds.every((d, i) => i === 0 || ds[i - 1] <= d) && r.data[0].walkMin === Math.ceil(r.data[0].distanceM / 1.3 / 60), r.data?.slice(0, 2));
