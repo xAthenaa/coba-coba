@@ -1,12 +1,12 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo } from "react";
 import { MapView } from "@/components/MapView";
 import { Button, Empty, Header, Banner } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { useItem } from "@/lib/mapItems";
 import { useGeo, SIM_START } from "@/lib/useGeo";
-import { fmtDist, pathLength, simRoute, walkMin } from "@/lib/geo";
+import { fmtDist, pathLength, walkMin } from "@/lib/geo";
+import { useRoadRoute } from "@/lib/useRoadRoute";
 
 /** V-06 Pratinjau Rute */
 export default function Rute() {
@@ -15,7 +15,7 @@ export default function Rute() {
   const geo = useGeo();
   const r = useRouter();
   const origin = geo.pos ?? SIM_START;
-  const route = useMemo(() => (it ? simRoute(origin, it) : []), [it?.id, origin.lat, origin.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { route } = useRoadRoute(origin, it);
   if (!it) return <><Header title="Rute" /><main className="flex-1 p-6"><Empty title="Tujuan tidak ditemukan" /></main></>;
   const len = pathLength(route);
   const far = len > 3000;

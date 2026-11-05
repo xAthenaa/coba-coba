@@ -29,3 +29,13 @@ export function turnText(p: LatLng[]) {
   const cross = (b.lng - a.lng) * (c.lat - b.lat) - (b.lat - a.lat) * (c.lng - b.lng);
   return cross > 0 ? "Belok kiri" : "Belok kanan";
 }
+/** Potongan awal polyline sepanjang d meter (untuk jejak "sudah dilalui"). */
+export function pathUntil(p: LatLng[], d: number): LatLng[] {
+  const out: LatLng[] = p.length ? [p[0]] : [];
+  for (let i = 1; i < p.length; i++) {
+    const seg = distance(p[i - 1], p[i]);
+    if (d <= seg) { out.push(pointAlong(p, pathLength(p.slice(0, i)) + d)); return out; }
+    out.push(p[i]); d -= seg;
+  }
+  return out;
+}
