@@ -377,6 +377,35 @@ async function main() {
   check("G-02 respons error tanpa stack/hash/secret", errs.every((e) => e.text && !/at .*\.(js|ts):\d|stack|\$2[aby]\$|passwordHash|tokenHash|DATABASE_URL/i.test(e.text)), errs.map((e) => e.text));
   check("G-02 format error {error:{code,message}}", errs.every((e) => e.error?.code && e.error?.message));
 
+  // ---------- H ----------
+  section("U. Unggah poster");
+  const up = async (c, blob, name) => {
+    const fd = new FormData(); if (blob) fd.append("file", blob, name);
+    const res = await fetch(BASE + "/api/upload", { method: "POST", body: fd, headers: c.cookieHeader ? { cookie: c.cookieHeader } : {} });
+    return { status: res.status, json: await res.json().catch(() => null) };
+  };
+  const PNG1 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+  check("U-01 unggah tanpa login -> 401", (await up(anon, new Blob([PNG1], { type: "image/png" }), "a.png")).status === 401);
+  check("U-01 unggah oleh pengunjung -> 403", (await up(vis, new Blob([PNG1], { type: "image/png" }), "a.png")).status === 403);
+  check("U-02 tanpa file -> 400", (await up(own, null)).status === 400);
+  check("U-02 tipe salah (text/plain) -> 400", (await up(own, new Blob(["halo"], { type: "text/plain" }), "a.txt")).status === 400);
+  check("U-02 isi bukan gambar walau type image/png -> 400", (await up(own, new Blob(["bukan png"], { type: "image/png" }), "a.png")).status === 400);
+  r = await up(own, new Blob([PNG1, Buffer.alloc(2 * 1024 * 1024)], { type: "image/png" }), "big.png");
+  check("U-02 > 2MB -> 400", r.status === 400, r.json);
+  r = await up(own, new Blob([PNG1], { type: "image/png" }), "poster.png");
+  check("U-03 panitia unggah PNG -> 201 {url}", r.status === 201 && /^\/uploads\/[a-z0-9-]+\.png$/.test(r.json?.data?.url), r.json);
+  const pUrl = r.json?.data?.url;
+  const img = await fetch(BASE + pUrl);
+  check("U-03 URL poster bisa diakses -> 200 image/png", img.status === 200 && img.headers.get("content-type") === "image/png");
+  const pe = await own.post("/api/events", evBody({ name: `Poster ${uniq}`, posterUrl: pUrl }));
+  check("U-04 event baru menyimpan posterUrl", pe.status === 201 && pe.data.posterUrl === pUrl, pe.json);
+  if (pe.data?.id) {
+    const g = await vis.get(`/api/events/${pe.data.id}`);
+    check("U-04 GET event mengembalikan posterUrl", g.data?.posterUrl === pUrl);
+    await own.del(`/api/events/${pe.data.id}`);
+  }
+  check("U-05 nama file asing -> 404", (await fetch(BASE + "/uploads/..%2Fetc.png")).status === 404);
+
   // bersih-bersih event yang dibuat matriks B
   for (const [, c, id] of created) if (c === own || c === other) await c.del(`/api/events/${id}`);
   await own.patch("/api/events/ev-invention", { description: (await import("../data/events.json", { with: { type: "json" } })).default.events.find((e) => e.id === "ev-invention").description });

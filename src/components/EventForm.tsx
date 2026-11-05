@@ -5,7 +5,7 @@ import { Button, Field, Header } from "./ui";
 import { Screen } from "./Screen";
 import { MapView } from "./MapView";
 import { useToast } from "./Toast";
-import { ApiError, saveEvent, usePlaces } from "@/lib/api";
+import { ApiError, saveEvent, uploadPoster, usePlaces } from "@/lib/api";
 import { campuses, faculties } from "@/lib/data";
 import { fromLocalInput, toLocalInput } from "@/lib/panitia";
 import type { WEvent } from "@/lib/types";
@@ -17,17 +17,35 @@ export function EventForm({ initial }: { initial?: WEvent }) {
   const { data: places = [] } = usePlaces();
   const [f, setF] = useState({
     name: initial?.name ?? "", description: initial?.description ?? "", faculty: initial?.faculty ?? "Teknik",
-    start: toLocalInput(initial?.start), end: toLocalInput(initial?.end), placeId: initial?.placeId ?? "",
+    start: toLocalInput(initial?.start), end: toLocalInput(initial?.end), placeId: initial?.placeId ?? "", poster: initial?.poster ?? "",
   });
+  const [uploading, setUploading] = useState(false);
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return setErr("Poster harus JPG, PNG, atau WEBP");
+    if (file.size > 2 * 1024 * 1024) return setErr("Ukuran poster maksimal 2 MB");
+    setUploading(true); setErr("");
+    try { const url = await uploadPoster(file); setF((p) => ({ ...p, poster: url })); }
+    catch (x) { setErr(x instanceof Error ? x.message : "Gagal mengunggah poster"); }
+    finally { setUploading(false); }
+  };
+  /** Tap titik mana pun di peta → pilih tempat terdekat (sama seperti tap pin). */
+  const onMapClick = (ll: { lat: number; lng: number }) => {
+    let best: string | null = null, bd = Infinity;
+    for (const p of places) { const d = (p.lat - ll.lat) ** 2 + ((p.lng - ll.lng) * Math.cos((ll.lat * Math.PI) / 180)) ** 2; if (d < bd) { bd = d; best = p.id; } }
+    if (best) setF((p) => ({ ...p, placeId: best }));
+  };
   const [err, setErr] = useState("");
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!f.name || !f.start || !f.end) return setErr("Nama dan jadwal wajib diisi");
     if (new Date(f.end) <= new Date(f.start)) return setErr("Waktu selesai harus setelah waktu mulai");
-    if (!f.placeId) return setErr("Pilih lokasi dengan tap pin di peta");
+    if (!f.placeId) return setErr("Pilih lokasi dengan tap di peta");
+    if (uploading) return setErr("Tunggu unggahan poster selesai");
     try {
       const ev = await saveEvent({
-        id: initial?.id, poster: initial?.poster ?? "", speakers: initial?.speakers ?? [], facilities: initial?.facilities ?? [],
+        id: initial?.id, poster: f.poster, speakers: initial?.speakers ?? [], facilities: initial?.facilities ?? [],
         name: f.name, description: f.description, faculty: f.faculty, start: fromLocalInput(f.start), end: fromLocalInput(f.end), placeId: f.placeId,
       });
       toast("Event tersimpan");
@@ -43,14 +61,21 @@ export function EventForm({ initial }: { initial?: WEvent }) {
         <Field label="Nama event" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         <label className="block"><span className="mb-2 block text-xs font-medium">Deskripsi</span>
           <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} rows={3} className="w-full rounded-lg border border-line bg-muted p-3 text-sm outline-none focus:border-primary" /></label>
-        <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-line text-xs text-ink-2">Unggah poster (simulasi, belum didukung)</div>
+        <div><span className="mb-2 block text-xs font-medium">Poster (JPG/PNG/WEBP, maks 2 MB)</span>
+          <label className="flex min-h-24 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-line text-xs text-ink-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {f.poster ? <img src={f.poster} alt="Pratinjau poster" className="max-h-60 w-full object-cover" /> : <span>{uploading ? "Mengunggah…" : "Tap untuk unggah poster"}</span>}
+            <input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Unggah poster" onChange={onFile} className="sr-only" />
+          </label>
+          {f.poster && <div className="mt-1 flex gap-3 text-xs">{uploading ? <span className="text-ink-2">Mengunggah…</span> : <span className="text-ink-2">Tap gambar untuk mengganti</span>}
+            <button type="button" onClick={() => setF({ ...f, poster: "" })} className="font-medium text-danger">Hapus poster</button></div>}</div>
         <label className="block"><span className="mb-2 block text-xs font-medium">Fakultas</span>
           <select value={f.faculty} onChange={(e) => setF({ ...f, faculty: e.target.value })} className="h-12 w-full rounded-lg border border-line bg-muted px-3 text-sm">{faculties.map((x) => <option key={x}>{x}</option>)}</select></label>
         <Field label="Mulai" type="datetime-local" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} />
         <Field label="Selesai" type="datetime-local" value={f.end} onChange={(e) => setF({ ...f, end: e.target.value })} />
-        <div><span className="mb-2 block text-xs font-medium">Lokasi — tap pin di peta: <b>{sel?.name ?? "belum dipilih"}</b></span>
+        <div><span className="mb-2 block text-xs font-medium">Lokasi — tap di peta: <b>{sel?.name ?? "belum dipilih"}</b></span>
           <div className="h-80 overflow-hidden rounded-xl border border-line">
-            <MapView center={campuses.sudirman.center} zoom={17} markers={places.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, cat: p.category, label: p.name, selected: p.id === f.placeId }))} onMarker={(id) => setF({ ...f, placeId: id })} />
+            <MapView center={campuses.sudirman.center} zoom={17} markers={places.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, cat: p.category, label: p.name, selected: p.id === f.placeId }))} onMarker={(id) => setF((p) => ({ ...p, placeId: id }))} onMapClick={onMapClick} />
           </div>
           <select aria-label="Pilih lokasi dari daftar" value={f.placeId} onChange={(e) => setF({ ...f, placeId: e.target.value })} className="mt-2 h-12 w-full rounded-lg border border-line bg-muted px-3 text-sm">
             <option value="">atau pilih dari daftar…</option>

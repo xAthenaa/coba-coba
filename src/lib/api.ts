@@ -86,3 +86,12 @@ export async function resolveQr(code: string) { return api<{ eventId: string; pl
 export async function readNotif(id: string) { await api(`/api/notifications/${id}/read`, { method: "POST" }); await globalMutate("/api/notifications"); }
 export async function readAllNotifs() { await api("/api/notifications/read-all", { method: "POST" }); await globalMutate("/api/notifications"); }
 export async function updateProfile(body: { name?: string; email?: string; phone?: string | null; faculty?: string | null; defaultCampusId?: string }) { const u = await api("/api/me", { method: "PATCH", body }); await globalMutate("/api/me"); return u; }
+
+/** Unggah poster (multipart) → URL publik /uploads/... */
+export async function uploadPoster(file: File): Promise<string> {
+  const fd = new FormData(); fd.append("file", file);
+  const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "same-origin" });
+  const j = await res.json().catch(() => null);
+  if (!res.ok) throw new ApiError(res.status, j?.error?.code ?? "ERROR", j?.error?.fields?.file ?? j?.error?.message ?? `HTTP ${res.status}`, j?.error?.fields);
+  return j.data.url as string;
+}
