@@ -4,7 +4,7 @@
  * Respons API dipetakan ke tipe UI (src/lib/types.ts): kategori/tipe huruf kecil, startAt→start, dst.
  */
 import useSWR, { mutate as globalMutate } from "swr";
-import type { CampusId, Category, Notif, Organizer, Pin, Place, WEvent } from "./types";
+import type { CampusId, Category, Notif, Organizer, Pin, Place, Proposal, ScheduleItem, WEvent } from "./types";
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string, public fields?: Record<string, string>) { super(message); }
@@ -27,17 +27,19 @@ const fetcher = (p: string): Promise<any> => api(p);
 type R = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const lc = (s: string) => (s ?? "").toLowerCase();
 export const toPlace = (p: R): Place => ({ id: p.id, name: p.name, category: lc(p.category) as Category, lat: p.lat, lng: p.lng, campus: p.campusId as CampusId, description: p.description ?? undefined, ...(p.distanceM !== undefined ? { distanceM: p.distanceM, walkMin: p.walkMin } : {}) });
-export type UIEvent = WEvent & { registered?: boolean; registrantCount?: number; place?: Place; organizerName?: string };
+export type UIEvent = WEvent & { registered?: boolean; registrantCount?: number; place?: Place; organizerName?: string; remaining?: number | null; schedule: ScheduleItem[]; proposal?: Proposal | null };
+export const toSchedule = (s: R): ScheduleItem => ({ id: s.id, eventId: s.eventId, title: s.title, start: s.startAt, end: s.endAt, speaker: s.speaker ?? undefined, location: s.location ?? undefined });
 export const toEvent = (e: R): UIEvent => ({
   id: e.id, organizerId: e.organizerId, name: e.name, description: e.description, poster: e.posterUrl ?? "", placeId: e.placeId, faculty: e.faculty,
   start: e.startAt, end: e.endAt, speakers: e.speakers ?? [], facilities: (e.facilities ?? []).map((f: R) => f.id),
   registered: e.registered, registrantCount: e.registrantCount, place: e.place ? toPlace(e.place) : undefined, organizerName: e.organizer?.name,
+  quota: e.quota ?? null, remaining: e.remaining ?? null, schedule: (e.schedule ?? []).map(toSchedule), ...("proposal" in e ? { proposal: e.proposal } : {}),
 });
 export const toPin = (p: R): Pin & { status?: string } => ({ id: p.id, eventId: p.eventId, label: p.label, category: lc(p.category) as Category, lat: p.lat, lng: p.lng, type: lc(p.type) as Pin["type"], start: p.startAt ?? undefined, end: p.endAt ?? undefined, status: p.status });
 export const toOrganizer = (o: R): Organizer & { eventCount?: number } => ({ id: o.id, name: o.name, logo: o.logoUrl ?? "", description: o.description, contact: o.contact, faculty: o.faculty, eventCount: o.eventCount });
 export const toNotif = (n: R): Notif & { read: boolean } => ({ id: n.id, type: lc(n.type), eventId: n.eventId ?? undefined, pinId: n.pinId ?? undefined, text: n.text, time: n.createdAt, read: n.read });
 const fromPin = (p: Partial<Pin>) => ({ label: p.label, category: p.category?.toUpperCase(), lat: p.lat, lng: p.lng, type: p.type?.toUpperCase(), startAt: p.type === "timed" ? p.start || null : null, endAt: p.type === "timed" ? p.end || null : null });
-const fromEvent = (e: Partial<WEvent>) => ({ name: e.name, description: e.description, posterUrl: e.poster || null, placeId: e.placeId, faculty: e.faculty, startAt: e.start, endAt: e.end, speakers: e.speakers, facilities: e.facilities });
+const fromEvent = (e: Partial<WEvent>) => ({ name: e.name, description: e.description, posterUrl: e.poster || null, placeId: e.placeId, faculty: e.faculty, startAt: e.start, endAt: e.end, speakers: e.speakers, facilities: e.facilities, ...("quota" in e ? { quota: e.quota ?? null } : {}) });
 
 /* ---------- hooks baca ---------- */
 function useList<T>(key: string | null, map: (x: R) => T) {
@@ -87,11 +89,55 @@ export async function readNotif(id: string) { await api(`/api/notifications/${id
 export async function readAllNotifs() { await api("/api/notifications/read-all", { method: "POST" }); await globalMutate("/api/notifications"); }
 export async function updateProfile(body: { name?: string; email?: string; phone?: string | null; faculty?: string | null; defaultCampusId?: string }) { const u = await api("/api/me", { method: "PATCH", body }); await globalMutate("/api/me"); return u; }
 
-/** Unggah poster (multipart) → URL publik /uploads/... */
-export async function uploadPoster(file: File): Promise<string> {
+async function upload<T>(path: string, file: File): Promise<T> {
   const fd = new FormData(); fd.append("file", file);
-  const res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "same-origin" });
+  const res = await fetch(path, { method: "POST", body: fd, credentials: "same-origin" });
   const j = await res.json().catch(() => null);
   if (!res.ok) throw new ApiError(res.status, j?.error?.code ?? "ERROR", j?.error?.fields?.file ?? j?.error?.message ?? `HTTP ${res.status}`, j?.error?.fields);
-  return j.data.url as string;
+  return j.data as T;
 }
+/** Unggah poster (multipart) → URL publik /uploads/... */
+export async function uploadPoster(file: File): Promise<string> { return (await upload<{ url: string }>("/api/upload", file)).url; }
+/** Unggah surat pengajuan (PDF ≤ 5 MB) untuk event — privat (panitia pemilik & admin). */
+export async function uploadProposal(eventId: string, file: File) { const p = await upload<Proposal>(`/api/events/${eventId}/proposal`, file); await refresh(["/api/events", "/api/admin/events"]); return p; }
+export async function deleteProposal(eventId: string) { await api(`/api/events/${eventId}/proposal`, { method: "DELETE" }); await refresh(["/api/events", "/api/admin/events"]); }
+
+/* ---------- jadwal / rundown ---------- */
+type SchedBody = { title: string; start: string; end: string; speaker?: string; location?: string };
+const fromSched = (s: SchedBody) => ({ title: s.title, startAt: s.start, endAt: s.end, speaker: s.speaker || null, location: s.location || null });
+export async function saveSchedule(eventId: string, s: SchedBody & { id?: string }) {
+  const out = s.id ? await api<R>(`/api/events/${eventId}/schedule/${s.id}`, { method: "PATCH", body: fromSched(s) }) : await api<R>(`/api/events/${eventId}/schedule`, { method: "POST", body: fromSched(s) });
+  await refresh([`/api/events/${eventId}`]);
+  return toSchedule(out);
+}
+export async function deleteSchedule(eventId: string, id: string) { await api(`/api/events/${eventId}/schedule/${id}`, { method: "DELETE" }); await refresh([`/api/events/${eventId}`]); }
+
+/* ---------- Admin ---------- */
+export type AdminUser = { id: string; name: string; email: string; role: "VISITOR" | "ORGANIZER" | "ADMIN"; active: boolean; google: boolean; organizerName: string | null; registrationCount: number; createdAt: string };
+export type Facility = { id: string; name: string; category: string; description: string; placeId: string | null; available: boolean; place: R | null };
+export type AdminStats = Record<"users" | "visitors" | "organizers" | "admins" | "inactive" | "events" | "places" | "facilities" | "registrations" | "pins" | "notifications", number>;
+export const useAdminStats = () => useSWR<AdminStats>("/api/admin/stats", fetcher);
+export const useAdminUsers = (q = "") => useSWR<AdminUser[]>(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`, fetcher);
+export const useAdminEvents = () => useList("/api/admin/events", toEvent);
+export const useFacilities = () => useSWR<Facility[]>("/api/admin/facilities", fetcher);
+export const useAdminRegistrations = () => useSWR<{ id: string; createdAt: string; user: R; event: R }[]>("/api/admin/registrations", fetcher);
+export const useAdminPins = () => useSWR<(R & { event: R })[]>("/api/admin/pins", fetcher);
+export const useAdminNotifications = () => useSWR<R[]>("/api/admin/notifications", fetcher);
+const adminRefresh = () => refresh(["/api/admin", "/api/events", "/api/places", "/api/pins", "/api/organizers", "/api/notifications"]);
+export async function updateUser(id: string, body: { role?: string; active?: boolean }) { const u = await api(`/api/admin/users/${id}`, { method: "PATCH", body }); await adminRefresh(); return u; }
+export async function deleteUser(id: string) { await api(`/api/admin/users/${id}`, { method: "DELETE" }); await adminRefresh(); }
+export type PlaceBody = { name: string; category: string; campusId: string; lat: number; lng: number; description?: string | null };
+export async function savePlace(p: PlaceBody & { id?: string }) {
+  const { id, ...body } = p;
+  const out = id ? await api<R>(`/api/places/${id}`, { method: "PATCH", body }) : await api<R>("/api/places", { method: "POST", body });
+  await adminRefresh(); return toPlace(out);
+}
+export async function deletePlace(id: string) { await api(`/api/places/${id}`, { method: "DELETE" }); await adminRefresh(); }
+export type FacilityBody = { name: string; category: string; description?: string; placeId?: string | null; available?: boolean };
+export async function saveFacility(f: FacilityBody & { id?: string }) {
+  const { id, ...body } = f;
+  const out = id ? await api<Facility>(`/api/admin/facilities/${id}`, { method: "PATCH", body }) : await api<Facility>("/api/admin/facilities", { method: "POST", body });
+  await adminRefresh(); return out;
+}
+export async function deleteFacility(id: string) { await api(`/api/admin/facilities/${id}`, { method: "DELETE" }); await adminRefresh(); }
+export async function adminDelete(kind: "registrations" | "notifications", id: string) { await api(`/api/admin/${kind}/${id}`, { method: "DELETE" }); await adminRefresh(); }

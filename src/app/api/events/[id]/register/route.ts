@@ -1,5 +1,5 @@
 import { db } from "@/server/db";
-import { E, noContent, ok, route } from "@/server/http";
+import { ApiError, E, noContent, ok, route } from "@/server/http";
 import { requireUser } from "@/server/auth";
 
 type P = { id: string };
@@ -10,7 +10,12 @@ export const POST = route<P>(async (_r, { id }) => {
   if (ev.endAt <= new Date()) throw E.bad("EVENT_ENDED", "Event sudah selesai");
   const exist = await db.registration.findUnique({ where: { userId_eventId: { userId: u.id, eventId: id } } });
   if (exist) throw E.conflict("Kamu sudah terdaftar di event ini");
-  const r = await db.registration.create({ data: { userId: u.id, eventId: id } });
+  // Cek kuota & simpan dalam satu transaksi (SQLite menserialkan penulisan).
+  const r = await db.$transaction(async (tx) => {
+    if (ev.quota != null && (await tx.registration.count({ where: { eventId: id } })) >= ev.quota)
+      throw new ApiError(409, "EVENT_FULL", "Kuota peserta event ini sudah penuh");
+    return tx.registration.create({ data: { userId: u.id, eventId: id } });
+  });
   return ok({ eventId: id, registeredAt: r.createdAt }, 201);
 });
 export const DELETE = route<P>(async (_r, { id }) => {

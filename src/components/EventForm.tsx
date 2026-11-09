@@ -3,22 +3,33 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Field, Header } from "./ui";
 import { Screen } from "./Screen";
+import { Icon } from "./Icon";
 import { MapView } from "./MapView";
 import { useToast } from "./Toast";
-import { ApiError, saveEvent, uploadPoster, usePlaces } from "@/lib/api";
+import { ApiError, deleteProposal, saveEvent, uploadPoster, uploadProposal, usePlaces, type UIEvent } from "@/lib/api";
 import { campuses, faculties } from "@/lib/data";
 import { fromLocalInput, toLocalInput } from "@/lib/panitia";
-import type { WEvent } from "@/lib/types";
 
-/** P-02 Tambah/Edit Event (lokasi dipilih dengan tap pin tempat di peta) */
-export function EventForm({ initial }: { initial?: WEvent }) {
+/** P-02 Tambah/Edit Event (lokasi dipilih dengan tap pin tempat di peta) + kuota peserta + surat pengajuan (PDF, privat).
+ *  `afterSave` = tujuan setelah simpan (default detail event panitia); `backHref` untuk header (admin). */
+export function EventForm({ initial, afterSave, children }: { initial?: UIEvent; afterSave?: (id: string) => string; children?: React.ReactNode }) {
   const r = useRouter();
   const toast = useToast();
   const { data: places = [] } = usePlaces();
   const [f, setF] = useState({
     name: initial?.name ?? "", description: initial?.description ?? "", faculty: initial?.faculty ?? "Teknik",
     start: toLocalInput(initial?.start), end: toLocalInput(initial?.end), placeId: initial?.placeId ?? "", poster: initial?.poster ?? "",
+    quota: initial?.quota ? String(initial.quota) : "",
   });
+  const [pdf, setPdf] = useState<File | null>(null);
+  const [proposal, setProposal] = useState(initial?.proposal ?? null);
+  const onPdf = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return;
+    if (file.type && file.type !== "application/pdf") return setErr("Surat pengajuan harus PDF");
+    if (file.size > 5 * 1024 * 1024) return setErr("Ukuran surat pengajuan maksimal 5 MB");
+    setErr(""); setPdf(file);
+  };
   const [uploading, setUploading] = useState(false);
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; e.target.value = "";
@@ -43,13 +54,19 @@ export function EventForm({ initial }: { initial?: WEvent }) {
     if (new Date(f.end) <= new Date(f.start)) return setErr("Waktu selesai harus setelah waktu mulai");
     if (!f.placeId) return setErr("Pilih lokasi dengan tap di peta");
     if (uploading) return setErr("Tunggu unggahan poster selesai");
+    const quota = f.quota.trim() ? Number(f.quota) : null;
+    if (quota !== null && (!Number.isInteger(quota) || quota < 1)) return setErr("Kuota harus bilangan bulat ≥ 1 (kosongkan bila tanpa batas)");
     try {
       const ev = await saveEvent({
-        id: initial?.id, poster: f.poster, speakers: initial?.speakers ?? [], facilities: initial?.facilities ?? [],
+        id: initial?.id, poster: f.poster, speakers: initial?.speakers ?? [], facilities: initial?.facilities ?? [], quota,
         name: f.name, description: f.description, faculty: f.faculty, start: fromLocalInput(f.start), end: fromLocalInput(f.end), placeId: f.placeId,
       });
+      if (pdf) {
+        try { await uploadProposal(ev.id, pdf); }
+        catch (x) { toast(`Event tersimpan, tetapi surat pengajuan gagal diunggah: ${x instanceof Error ? x.message : ""}`, "error"); r.replace(afterSave ? afterSave(ev.id) : `/panitia/event/${ev.id}/edit`); return; }
+      }
       toast("Event tersimpan");
-      r.replace(`/panitia/event/${ev.id}`);
+      r.replace(afterSave ? afterSave(ev.id) : `/panitia/event/${ev.id}`);
     } catch (x) {
       setErr(x instanceof ApiError ? Object.values(x.fields ?? {})[0] ?? x.message : "Gagal menyimpan");
     }
@@ -73,6 +90,21 @@ export function EventForm({ initial }: { initial?: WEvent }) {
           <select value={f.faculty} onChange={(e) => setF({ ...f, faculty: e.target.value })} className="h-12 w-full rounded-lg border border-line bg-muted px-3 text-sm">{faculties.map((x) => <option key={x}>{x}</option>)}</select></label>
         <Field label="Mulai" type="datetime-local" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} />
         <Field label="Selesai" type="datetime-local" value={f.end} onChange={(e) => setF({ ...f, end: e.target.value })} />
+        <div>
+          <Field label="Kuota peserta (kosongkan bila tanpa batas)" type="number" min={1} inputMode="numeric" value={f.quota} onChange={(e) => setF({ ...f, quota: e.target.value })} placeholder="mis. 100" />
+          {initial && (initial.registrantCount ?? 0) > 0 && <p className="mt-1 text-xs text-ink-2">Sudah ada {initial.registrantCount} pendaftar.</p>}
+        </div>
+        <div><span className="mb-2 block text-xs font-medium">Surat pengajuan event (PDF, maks 5 MB — hanya panitia & admin)</span>
+          <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-line px-3 text-xs text-ink-2">
+            <Icon name="download" size={16} />{pdf ? pdf.name : proposal ? "Tap untuk mengganti surat" : "Tap untuk unggah surat pengajuan"}
+            <input type="file" accept="application/pdf" aria-label="Unggah surat pengajuan" onChange={onPdf} className="sr-only" />
+          </label>
+          {pdf && <p className="mt-1 text-xs text-ink-2">Akan diunggah saat disimpan. <button type="button" className="font-medium text-danger" onClick={() => setPdf(null)}>Batal</button></p>}
+          {!pdf && proposal && initial && <div className="mt-1 flex gap-3 text-xs">
+            <a href={proposal.url} target="_blank" rel="noreferrer" className="font-medium text-primary underline">Lihat {proposal.name}</a>
+            <button type="button" className="font-medium text-danger" onClick={async () => { try { await deleteProposal(initial.id); setProposal(null); toast("Surat pengajuan dihapus"); } catch (x) { setErr(x instanceof Error ? x.message : "Gagal menghapus"); } }}>Hapus surat</button>
+          </div>}
+        </div>
         <div><span className="mb-2 block text-xs font-medium">Lokasi — tap di peta: <b>{sel?.name ?? "belum dipilih"}</b></span>
           <div className="h-80 overflow-hidden rounded-xl border border-line">
             <MapView center={campuses.sudirman.center} zoom={17} markers={places.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng, cat: p.category, label: p.name, selected: p.id === f.placeId }))} onMarker={(id) => setF((p) => ({ ...p, placeId: id }))} onMapClick={onMapClick} />
@@ -85,6 +117,7 @@ export function EventForm({ initial }: { initial?: WEvent }) {
         <Button type="submit">Simpan</Button>
         <Button type="button" variant="secondary" onClick={() => r.back()}>Batal</Button>
       </form>
+      {children}
     </Screen>
   );
 }

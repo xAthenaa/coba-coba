@@ -1,4 +1,4 @@
-import type { Event, Organizer, Pin, Place, User } from "@prisma/client";
+import type { Event, EventSchedule, Facility, Organizer, Pin, Place, User } from "@prisma/client";
 
 export type EventStatus = "UPCOMING" | "ONGOING" | "ENDED";
 export type PinStatus = "SCHEDULED" | "ACTIVE" | "EXPIRED";
@@ -18,21 +18,38 @@ export const activePinWhere = (now = new Date()) => ({
 
 export const userOut = (u: User & { organizer?: Organizer | null }) => ({
   id: u.id, name: u.name, email: u.email, role: u.role, avatarUrl: u.avatarUrl, phone: u.phone, faculty: u.faculty,
-  defaultCampusId: u.defaultCampusId, organizerId: u.organizer?.id ?? null, createdAt: u.createdAt,
+  defaultCampusId: u.defaultCampusId, organizerId: u.organizer?.id ?? null, active: u.active, google: !!u.googleId, createdAt: u.createdAt,
+});
+export const scheduleOut = (s: EventSchedule) => ({ id: s.id, eventId: s.eventId, title: s.title, startAt: s.startAt, endAt: s.endAt, speaker: s.speaker, location: s.location });
+export const facilityOut = (f: Facility & { place?: Place | null }) => ({
+  id: f.id, name: f.name, category: f.category, description: f.description, placeId: f.placeId, available: f.available,
+  place: f.place ? placeOut(f.place) : null, createdAt: f.createdAt, updatedAt: f.updatedAt,
 });
 export const placeOut = (p: Place) => ({ id: p.id, campusId: p.campusId, name: p.name, category: p.category, lat: p.lat, lng: p.lng, photoUrl: p.photoUrl, description: p.description });
 export const organizerOut = (o: Organizer) => ({ id: o.id, name: o.name, logoUrl: o.logoUrl, description: o.description, contact: o.contact, faculty: o.faculty });
 export const pinOut = (p: Pin) => ({ id: p.id, eventId: p.eventId, label: p.label, category: p.category, lat: p.lat, lng: p.lng, type: p.type, startAt: p.startAt, endAt: p.endAt, status: pinStatus(p) });
 
-type FullEvent = Event & { place: Place; organizer: Organizer; facilities: { place: Place }[]; _count?: { registrations: number } };
-export const eventInclude = { place: true, organizer: true, facilities: { include: { place: true } }, _count: { select: { registrations: true } } } as const;
-export function eventOut(e: FullEvent, extra: { registered?: boolean } = {}) {
+type FullEvent = Event & { place: Place; organizer: Organizer; facilities: { place: Place }[]; schedule?: EventSchedule[]; _count?: { registrations: number } };
+export const eventInclude = {
+  place: true, organizer: true, facilities: { include: { place: true } }, schedule: { orderBy: { startAt: "asc" } },
+  _count: { select: { registrations: true } },
+} as const;
+/** Surat pengajuan hanya terlihat oleh panitia pemilik event & Admin. */
+export const canSeeProposal = (u: { role: string; organizer?: { id: string } | null }, e: Pick<Event, "organizerId">) =>
+  u.role === "ADMIN" || (u.role === "ORGANIZER" && u.organizer?.id === e.organizerId);
+export function eventOut(e: FullEvent, extra: { registered?: boolean } = {}, viewer?: { role: string; organizer?: { id: string } | null }) {
   let speakers: string[] = [];
   try { speakers = JSON.parse(e.speakers); } catch {}
   return {
     id: e.id, name: e.name, description: e.description, posterUrl: e.posterUrl, faculty: e.faculty, startAt: e.startAt, endAt: e.endAt,
     speakers, status: eventStatus(e), placeId: e.placeId, place: placeOut(e.place), organizerId: e.organizerId,
     organizer: { id: e.organizer.id, name: e.organizer.name, logoUrl: e.organizer.logoUrl },
-    facilities: e.facilities.map((f) => placeOut(f.place)), registrantCount: e._count?.registrations ?? 0, ...extra,
+    facilities: e.facilities.map((f) => placeOut(f.place)), registrantCount: e._count?.registrations ?? 0,
+    quota: e.quota, remaining: e.quota == null ? null : Math.max(0, e.quota - (e._count?.registrations ?? 0)),
+    schedule: (e.schedule ?? []).map(scheduleOut),
+    ...(viewer && canSeeProposal(viewer, e)
+      ? { proposal: e.proposalFile ? { name: e.proposalName ?? "surat-pengajuan.pdf", uploadedAt: e.proposalAt, url: `/api/events/${e.id}/proposal` } : null }
+      : {}),
+    ...extra,
   };
 }

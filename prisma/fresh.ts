@@ -4,6 +4,7 @@ import { execSync } from "node:child_process";
 const db = new PrismaClient();
 async function main() {
   await db.$transaction([
+    db.passwordResetToken.deleteMany(), db.eventSchedule.deleteMany(), db.facility.deleteMany(),
     db.notification.deleteMany(), db.registration.deleteMany(), db.qrMap.deleteMany(), db.pin.deleteMany(), db.eventFacility.deleteMany(),
     db.event.deleteMany(), db.organizer.deleteMany(), db.session.deleteMany(), db.user.deleteMany(), db.place.deleteMany(), db.campus.deleteMany(),
   ]);

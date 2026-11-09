@@ -56,6 +56,28 @@ async function main() {
     const d = { userId: "u-pengunjung", type: n.type.toUpperCase(), text: n.text, eventId: n.eventId ?? null, pinId: n.pinId ?? null, createdAt: new Date(n.time) };
     await db.notification.upsert({ where: { id: n.id }, create: { id: n.id, ...d }, update: d });
   }
-  console.log("Seed selesai:", { campuses: await db.campus.count(), places: await db.place.count(), users: await db.user.count(), organizers: await db.organizer.count(), events: await db.event.count(), pins: await db.pin.count() });
+  // --- Tambahan (fitur Admin/fasilitas/jadwal) — data JSON lama tidak diubah ---
+  // Akun Admin hanya dibuat lewat seed (tidak bisa lewat daftar publik). Ganti password di produksi (env WAYO_ADMIN_PASSWORD).
+  const adminPw = await bcrypt.hash(process.env.WAYO_ADMIN_PASSWORD || "admin123", 10);
+  const adm = { name: "Admin WAYO", email: (process.env.WAYO_ADMIN_EMAIL || "admin@wayo.local").toLowerCase(), passwordHash: adminPw, role: "ADMIN", active: true };
+  await db.user.upsert({ where: { id: "u-admin" }, create: { id: "u-admin", ...adm }, update: adm });
+  for (const f of [
+    { id: "fac-toilet-aud", name: "Toilet Auditorium", category: "TOILET", placeId: "pl-toilet-aud", description: "Toilet pria & wanita dekat aula (contoh)" },
+    { id: "fac-toilet-fk", name: "Toilet FK", category: "TOILET", placeId: "pl-toilet-fmipa", description: "Contoh" },
+    { id: "fac-parkir-utama", name: "Parkir Utama", category: "PARKIR", placeId: "pl-parkir-utama", description: "Parkir motor & mobil (contoh)" },
+    { id: "fac-kantin-pusat", name: "Kantin Pusat", category: "KANTIN", placeId: "pl-kantin-pusat", description: "Contoh" },
+    { id: "fac-info", name: "Meja Informasi", category: "LAINNYA", placeId: "pl-info", description: "Pusat informasi kampus (contoh)" },
+    { id: "fac-jb-kantin1", name: "Kantin 1 Jimbaran", category: "KANTIN", placeId: "pl-jb-kantin1", description: "Contoh" },
+  ]) await db.facility.upsert({ where: { id: f.id }, create: f, update: f });
+  const inv = events.events.find((e) => e.id === "ev-invention");
+  if (inv) {
+    const s0 = new Date(inv.start).getTime(), H = 3600e3;
+    for (const s of [
+      { id: "sch-inv-1", title: "Registrasi & pembukaan", startAt: new Date(s0), endAt: new Date(s0 + 0.5 * H), speaker: null, location: "Lobi" },
+      { id: "sch-inv-2", title: "Pameran karya mahasiswa", startAt: new Date(s0 + 0.5 * H), endAt: new Date(s0 + 2 * H), speaker: null, location: "Aula" },
+      { id: "sch-inv-3", title: "Penjurian & penutupan", startAt: new Date(s0 + 2 * H), endAt: new Date(s0 + 3 * H), speaker: "Dewan juri (contoh)", location: "Aula" },
+    ]) await db.eventSchedule.upsert({ where: { id: s.id }, create: { ...s, eventId: inv.id }, update: { ...s, eventId: inv.id } });
+  }
+  console.log("Seed selesai:", { campuses: await db.campus.count(), places: await db.place.count(), users: await db.user.count(), organizers: await db.organizer.count(), events: await db.event.count(), pins: await db.pin.count(), facilities: await db.facility.count(), schedule: await db.eventSchedule.count() });
 }
 main().finally(() => db.$disconnect());

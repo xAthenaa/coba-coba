@@ -1,4 +1,6 @@
-export const ROLES = ["VISITOR", "ORGANIZER"] as const;
+export const ROLES = ["VISITOR", "ORGANIZER"] as const; // peran yang boleh dipilih saat daftar publik
+export const ALL_ROLES = ["VISITOR", "ORGANIZER", "ADMIN"] as const; // ADMIN hanya lewat seed / panel admin
+export const FACILITY_TYPES = ["TOILET", "PARKIR", "KANTIN", "IBADAH", "KESEHATAN", "WIFI", "ATM", "LAINNYA"] as const;
 export const CATEGORIES = ["GEDUNG", "EVENT", "KANTIN", "TOILET", "PARKIR", "INFO", "STAND"] as const;
 export const PIN_TYPES = ["TIMED", "PERMANENT"] as const;
 export const NOTIF_TYPES = ["EVENT_START", "PIN_NEW", "PIN_EXPIRING", "EVENT_UPDATED"] as const;

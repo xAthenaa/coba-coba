@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Button, Field, Banner } from "@/components/ui";
-import { login } from "@/lib/auth";
+import { login, roleHome, type Role } from "@/lib/auth";
+import { GOOGLE_MSG, GoogleButton } from "@/components/GoogleButton";
 import { LOC_PREF } from "@/lib/useGeo";
 
 /** L-01 Login: peran ditentukan dari akun (tanpa toggle; pilihan peran hanya di Daftar). Login ke POST /api/auth/login; cookie sesi httpOnly diset server. Tanpa mode tamu. */
@@ -15,8 +16,9 @@ function Login() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const next = q.get("next");
-  const afterLogin = (rl: "pengunjung" | "panitia") =>
-    r.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : rl === "panitia" ? "/panitia" : localStorage.getItem(LOC_PREF) ? "/home" : "/izin-lokasi");
+  const google = q.get("google");
+  const afterLogin = (rl: Role) =>
+    r.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : rl !== "pengunjung" ? roleHome(rl) : localStorage.getItem(LOC_PREF) ? "/home" : "/izin-lokasi");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +40,7 @@ function Login() {
       <h1 className="mt-4 text-center text-xl font-semibold text-primary">Login</h1>
       <p className="text-center text-xs text-ink-2">Tolong masukan email dan password</p>
       {next && <div className="mt-4"><Banner>Silakan masuk untuk melanjutkan.</Banner></div>}
+      {google && GOOGLE_MSG[google] && <div className="mt-4"><Banner>{GOOGLE_MSG[google]}</Banner></div>}
       <form onSubmit={submit} className="mt-6 space-y-4">
         <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@contoh.id" autoComplete="email" />
         <div>
@@ -47,6 +50,8 @@ function Login() {
         {err && <p role="alert" className="text-xs font-medium text-danger">{err}</p>}
         <Button type="submit" disabled={busy}>{busy ? "Memproses…" : "Login"}</Button>
       </form>
+      <div className="my-4 flex items-center gap-3 text-xs text-ink-2"><span className="h-px flex-1 bg-line" />atau<span className="h-px flex-1 bg-line" /></div>
+      <GoogleButton mode="login" next={next} label="Masuk dengan Google" />
       <p className="mt-3 text-center text-xs text-ink-2">Demo (contoh): panitia@contoh.id atau pengunjung@contoh.id / demo123</p>
       <p className="mt-6 text-center text-xs text-ink">Belum memiliki akun? <Link href="/daftar" className="font-semibold text-primary">Daftar sekarang</Link></p>
     </main>

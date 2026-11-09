@@ -11,22 +11,38 @@ datasource db {
 }
 
 model User {
-  id              String         @id @default(cuid())
+  id              String               @id @default(cuid())
   name            String
-  email           String         @unique
+  email           String               @unique
   passwordHash    String
-  role            String // VISITOR | ORGANIZER
+  role            String // VISITOR | ORGANIZER | ADMIN (ADMIN hanya dibuat lewat seed)
+  googleId        String?              @unique
+  active          Boolean              @default(true)
   avatarUrl       String?
   phone           String?
   faculty         String?
-  defaultCampusId String         @default("sudirman")
-  createdAt       DateTime       @default(now())
-  defaultCampus   Campus         @relation(fields: [defaultCampusId], references: [id])
+  defaultCampusId String               @default("sudirman")
+  createdAt       DateTime             @default(now())
+  defaultCampus   Campus               @relation(fields: [defaultCampusId], references: [id])
   organizer       Organizer?
   registrations   Registration[]
   notifications   Notification[]
   sessions        Session[]
   pins            Pin[]
+  resetTokens     PasswordResetToken[]
+}
+
+/// Token atur ulang kata sandi: hanya SHA-256 yang disimpan, berlaku ~1 jam, sekali pakai.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Session {
@@ -73,29 +89,63 @@ model Place {
   events      Event[]
   facilityOf  EventFacility[]
   qrTargets   QrMap[]
+  facilities  Facility[]
+}
+
+/// Data master fasilitas (dikelola Admin). placeId opsional = lokasi fasilitas di peta.
+model Facility {
+  id          String   @id @default(cuid())
+  name        String
+  category    String // TOILET | PARKIR | KANTIN | IBADAH | KESEHATAN | WIFI | ATM | LAINNYA
+  description String   @default("")
+  placeId     String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  place       Place?   @relation(fields: [placeId], references: [id], onDelete: SetNull)
 }
 
 model Event {
-  id          String          @id @default(cuid())
-  organizerId String
-  placeId     String
-  name        String
-  description String          @default("")
-  posterUrl   String?
-  faculty     String
-  startAt     DateTime
-  endAt       DateTime
-  speakers    String          @default("[]") // JSON array of strings
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  organizer   Organizer       @relation(fields: [organizerId], references: [id], onDelete: Cascade)
-  place       Place           @relation(fields: [placeId], references: [id])
-  pins        Pin[]
+  id            String          @id @default(cuid())
+  organizerId   String
+  placeId       String
+  name          String
+  description   String          @default("")
+  posterUrl     String?
+  faculty       String
+  startAt       DateTime
+  endAt         DateTime
+  speakers      String          @default("[]") // JSON array of strings
+  quota         Int? // kuota peserta; null = tanpa batas
+  proposalFile  String? // nama file surat pengajuan (PDF) di data/proposals (privat)
+  proposalName  String? // nama file asli untuk diunduh
+  proposalAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  organizer     Organizer       @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  place         Place           @relation(fields: [placeId], references: [id])
+  pins          Pin[]
   registrations Registration[]
-  qr          QrMap?
-  facilities  EventFacility[]
+  qr            QrMap?
+  facilities    EventFacility[]
+  schedule      EventSchedule[]
 
   @@index([startAt])
+}
+
+/// Jadwal/rundown kegiatan, terpisah dari informasi utama event.
+model EventSchedule {
+  id        String   @id @default(cuid())
+  eventId   String
+  title     String
+  startAt   DateTime
+  endAt     DateTime
+  speaker   String?
+  location  String?
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, startAt])
 }
 
 model EventFacility {

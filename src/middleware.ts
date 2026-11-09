@@ -4,8 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
  * Proteksi halaman per peran. Hanya memeriksa keberadaan cookie sesi + petunjuk peran (wayo_role);
  * validasi sesi yang sesungguhnya & otorisasi tetap di Route Handlers (/api/*).
  */
-const PUBLIC = ["/", "/login", "/daftar", "/lupa-password"];
+const PUBLIC = ["/", "/login", "/daftar", "/lupa-password", "/atur-ulang-password"];
 const ORGANIZER_ONLY = ["/panitia"];
+const ADMIN_ONLY = ["/admin"];
+const roleHome = (role?: string) => (role === "ADMIN" ? "/admin" : role === "ORGANIZER" ? "/panitia" : "/home");
 const VISITOR_ONLY = ["/scan", "/event-saya"];
 const starts = (p: string, list: string[]) => list.some((b) => p === b || p.startsWith(b + "/"));
 
@@ -20,8 +22,9 @@ export function middleware(req: NextRequest) {
     url.searchParams.set("next", pathname + search);
     return NextResponse.redirect(url);
   }
-  if (starts(pathname, ORGANIZER_ONLY) && role !== "ORGANIZER") return NextResponse.redirect(new URL("/home", req.url));
-  if (starts(pathname, VISITOR_ONLY) && role === "ORGANIZER") return NextResponse.redirect(new URL("/panitia", req.url));
+  if (starts(pathname, ADMIN_ONLY) && role !== "ADMIN") return NextResponse.redirect(new URL(roleHome(role), req.url));
+  if (starts(pathname, ORGANIZER_ONLY) && role !== "ORGANIZER") return NextResponse.redirect(new URL(role === "ADMIN" ? "/admin" : "/home", req.url));
+  if (starts(pathname, VISITOR_ONLY) && (role === "ORGANIZER" || role === "ADMIN")) return NextResponse.redirect(new URL(roleHome(role), req.url));
   return NextResponse.next();
 }
 

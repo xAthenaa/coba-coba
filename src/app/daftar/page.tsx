@@ -1,15 +1,18 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Button, Field, Toggle2, Header } from "@/components/ui";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import { Button, Field, Toggle2, Header, Banner } from "@/components/ui";
+import { GOOGLE_MSG, GoogleButton } from "@/components/GoogleButton";
 import { register } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { useToast } from "@/components/Toast";
 
 /** L-02 Daftar (L-02b = Panitia dipilih) */
-export default function Daftar() {
+function Daftar() {
   const r = useRouter();
+  const q = useSearchParams();
+  const google = q.get("google");
   const toast = useToast();
   const [role, setRole] = useState<"pengunjung" | "panitia">("pengunjung");
   const [f, setF] = useState({ name: "", email: "", pw: "" });
@@ -33,6 +36,7 @@ export default function Daftar() {
     <>
       <Header title="Daftar" backHref="/login" />
       <main className="flex-1 overflow-y-auto px-6 py-6">
+        {google && GOOGLE_MSG[google] && <div className="mb-4"><Banner>{GOOGLE_MSG[google]}{google === "baru" && q.get("email") ? ` (${q.get("email")})` : ""}</Banner></div>}
         <form onSubmit={submit} className="space-y-4">
           <Field label="Nama lengkap" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
           <Field label="Email" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
@@ -43,8 +47,11 @@ export default function Daftar() {
           {err && <p role="alert" className="text-xs font-medium text-danger">{err}</p>}
           <Button type="submit" disabled={busy}>{busy ? "Memproses…" : "Daftar"}</Button>
         </form>
+        <div className="my-4 flex items-center gap-3 text-xs text-ink-2"><span className="h-px flex-1 bg-line" />atau<span className="h-px flex-1 bg-line" /></div>
+        <GoogleButton mode="daftar" role={role === "panitia" ? "ORGANIZER" : "VISITOR"} label={`Daftar dengan Google sebagai ${role === "panitia" ? "Panitia" : "Pengunjung"}`} />
         <p className="mt-6 text-center text-xs">Sudah punya akun? <Link href="/login" className="font-semibold text-primary">Masuk</Link></p>
       </main>
     </>
   );
 }
+export default function Page() { return <Suspense><Daftar /></Suspense>; }

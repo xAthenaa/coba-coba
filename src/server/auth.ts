@@ -33,17 +33,20 @@ export async function getUser() {
   if (!token) return null;
   const s = await db.session.findUnique({ where: { tokenHash: sha256(token) }, include: { user: { include: { organizer: true } } } });
   if (!s) return null;
+  if (!s.user.active) return null; // akun dinonaktifkan Admin
   if (s.expiresAt < new Date()) { await db.session.delete({ where: { id: s.id } }).catch(() => {}); return null; }
   return s.user;
 }
 export type AuthUser = NonNullable<Awaited<ReturnType<typeof getUser>>>;
 
-export async function requireUser(role?: "VISITOR" | "ORGANIZER") {
+const ROLE_MSG = { ORGANIZER: "Hanya untuk panitia", VISITOR: "Hanya untuk pengunjung", ADMIN: "Hanya untuk admin" } as const;
+export async function requireUser(role?: "VISITOR" | "ORGANIZER" | "ADMIN") {
   const u = await getUser();
   if (!u) throw E.unauth();
-  if (role && u.role !== role) throw E.forbidden(role === "ORGANIZER" ? "Hanya untuk panitia" : "Hanya untuk pengunjung");
+  if (role && u.role !== role) throw E.forbidden(ROLE_MSG[role]);
   return u;
 }
+export const requireAdmin = () => requireUser("ADMIN");
 export async function requireOrganizer() {
   const u = await requireUser("ORGANIZER");
   if (!u.organizer) throw E.forbidden("Akun panitia belum punya penyelenggara");
