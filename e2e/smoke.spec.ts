@@ -5,8 +5,8 @@ const visitor = ["/home", "/home?fakultas=Teknik", "/event/ev-invention", "/even
   "/peta/rute/pl-auditorium", "/peta/navigasi/pl-auditorium", "/peta/tiba/pl-auditorium", "/peta/event/ev-invention", "/scan",
   "/notifikasi", "/profil", "/profil/edit", "/profil/pengaturan", "/profil/faq", "/profil/tentang"];
 const panitia = ["/panitia", "/panitia/event/baru", "/panitia/event/ev-invention", "/panitia/event/ev-invention/edit", "/panitia/event/ev-invention/pin",
-  "/panitia/event/ev-invention/pin/baru", "/panitia/event/ev-invention/pin/pin-booth-reg", "/panitia/event/ev-invention/qr"];
-const pub = ["/", "/login", "/daftar", "/lupa-password", "/izin-lokasi"];
+  "/panitia/event/ev-invention/pin/baru", "/panitia/event/ev-invention/pin/pin-booth-reg", "/panitia/event/ev-invention/qr", "/panitia/event/ev-invention/jadwal"];
+const pub = ["/", "/login", "/daftar", "/lupa-password", "/atur-ulang-password?token=x", "/izin-lokasi"];
 
 /** Login sungguhan lewat API (cookie httpOnly dibagi dengan konteks browser). */
 async function login(page: Page, role: "pengunjung" | "panitia") {
@@ -99,7 +99,9 @@ test("QR asli: /q/[code] → peta event; QR lama setelah regenerate → tidak va
   const ctx = await browser.newContext();
   const org = await ctx.newPage();
   await login(org, "panitia");
-  const qr = (await (await org.request.get("/api/events/ev-invention/qr")).json()).data;
+  // Event contoh ev-invention sudah selesai (5 Nov 2026) → QR-nya tidak valid lagi; pakai event uji yang sedang berlangsung.
+  const live = (await (await org.request.post("/api/events", { data: { name: "QR E2E", faculty: "Teknik", placeId: "pl-auditorium", startAt: new Date(Date.now() - 3600e3).toISOString(), endAt: new Date(Date.now() + 48 * 3600e3).toISOString() } })).json()).data;
+  const qr = (await (await org.request.get(`/api/events/${live.id}/qr`)).json()).data;
   expect(qr.url).toContain(`/q/${qr.code}`);
   // belum login → login?next=/q/code → setelah login kembali ke peta event
   await page.addInitScript(() => localStorage.setItem("wayo-loc-pref", "allow"));
@@ -108,10 +110,10 @@ test("QR asli: /q/[code] → peta event; QR lama setelah regenerate → tidak va
   await page.getByLabel("Email").fill("pengunjung@contoh.id");
   await page.getByLabel("Password").fill("demo123");
   await page.getByRole("button", { name: "Login" }).click();
-  await expect(page).toHaveURL(/\/peta\/event\/ev-invention/);
+  await expect(page).toHaveURL(new RegExp(`/peta/event/${live.id}`));
   await expect(page.getByText(/Peta dari QR/)).toBeVisible();
   // panitia buat ulang QR → kode lama tidak valid
-  await org.goto("/panitia/event/ev-invention/qr");
+  await org.goto(`/panitia/event/${live.id}/qr`);
   await org.getByRole("button", { name: "Buat ulang QR" }).click();
   await org.getByRole("button", { name: "Buat ulang", exact: true }).click();
   await expect(org.getByText("QR baru dibuat")).toBeVisible();
@@ -123,6 +125,7 @@ test("QR asli: /q/[code] → peta event; QR lama setelah regenerate → tidak va
   await page.getByLabel("Kode QR manual").fill(qr.url);
   await page.getByRole("button", { name: "Buka" }).click();
   await expect(page.getByRole("dialog")).toContainText("QR tidak valid");
+  await org.request.delete(`/api/events/${live.id}`);
   await ctx.close();
 });
 
