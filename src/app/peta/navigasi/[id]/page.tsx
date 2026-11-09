@@ -11,7 +11,7 @@ import { useRoadRoute } from "@/lib/useRoadRoute";
 
 const SIM_SECONDS = 18; // durasi simulasi berjalan (dipercepat)
 
-/** V-07 Navigasi Aktif — jalan kaki disimulasikan di sepanjang rute; banner "Rute diperbarui" (re-route) di tengah. */
+/** V-07 Navigasi Aktif (simulasi dimulai setelah rute dimuat) — jalan kaki disimulasikan di sepanjang rute; banner "Rute diperbarui" (re-route) di tengah. */
 export default function Navigasi() {
   const { id } = useParams<{ id: string }>();
   const it = useItem(id);
@@ -24,7 +24,7 @@ export default function Navigasi() {
   const [reroute, setReroute] = useState(false);
   const [confirm, setConfirm] = useState(false);
   useEffect(() => {
-    if (!it || confirm) return;
+    if (!it || confirm || total <= 0) return;
     const step = total / (SIM_SECONDS * 4);
     const t = setInterval(() => setWalked((w) => Math.min(total, w + step)), 250);
     return () => clearInterval(t);
@@ -35,7 +35,8 @@ export default function Navigasi() {
     if (walked > total * 0.45 && walked < total * 0.45 + total / (SIM_SECONDS * 4) * 1.01) { setReroute(true); setTimeout(() => setReroute(false), 2500); }
   }, [walked, total, it, r]);
   if (!it) return <><Header title="Navigasi" /><main className="flex-1 p-6"><Empty title="Tujuan tidak ditemukan" /></main></>;
-  const pos = pointAlong(route, walked);
+  // Rute jalan (OSRM) dimuat async: selama route masih [] pakai titik awal agar peta tidak crash (dulu: undefined.lat).
+  const pos = pointAlong(route, walked) ?? startRef.current;
   const left = Math.max(0, total - walked);
   const firstLeg = !road && route.length > 2 ? distance(route[0], route[1]) : 0;
   const beforeTurn = walked < firstLeg;

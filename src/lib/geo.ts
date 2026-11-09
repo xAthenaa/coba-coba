@@ -15,7 +15,9 @@ export function simRoute(from: LatLng, to: LatLng): LatLng[] {
   return [from, { lat: from.lat, lng: to.lng }, to];
 }
 export const pathLength = (p: LatLng[]) => p.slice(1).reduce((s, q, i) => s + distance(p[i], q), 0);
-export function pointAlong(p: LatLng[], d: number): LatLng {
+/** Titik sejauh d meter di sepanjang polyline. Polyline kosong → undefined (pemanggil wajib menyediakan cadangan). */
+export function pointAlong(p: LatLng[], d: number): LatLng | undefined {
+  if (!p.length) return undefined;
   for (let i = 1; i < p.length; i++) {
     const seg = distance(p[i - 1], p[i]);
     if (d <= seg) { const f = seg ? d / seg : 0; return { lat: p[i - 1].lat + (p[i].lat - p[i - 1].lat) * f, lng: p[i - 1].lng + (p[i].lng - p[i - 1].lng) * f }; }
@@ -34,7 +36,7 @@ export function pathUntil(p: LatLng[], d: number): LatLng[] {
   const out: LatLng[] = p.length ? [p[0]] : [];
   for (let i = 1; i < p.length; i++) {
     const seg = distance(p[i - 1], p[i]);
-    if (d <= seg) { out.push(pointAlong(p, pathLength(p.slice(0, i)) + d)); return out; }
+    if (d <= seg) { const q = pointAlong(p, pathLength(p.slice(0, i)) + d); if (q) out.push(q); return out; }
     out.push(p[i]); d -= seg;
   }
   return out;
