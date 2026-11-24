@@ -53,19 +53,19 @@ async function main() {
   if (prisma) {
     const count = async () => ({ e: await prisma.event.count({ where: { id: { in: ["ev-webinar", "ev-invention", "ev-pkkmb"] } } }), o: await prisma.organizer.count({ where: { id: { in: ["org-ft", "org-hmif", "org-bem"] } } }), p: await prisma.place.count(), pin: await prisma.pin.count(), u: await prisma.user.count({ where: { id: { in: ["u-pengunjung", "u-panitia"] } } }), qr: await prisma.qrMap.count(), adm: await prisma.user.count({ where: { role: "ADMIN", id: { in: ["u-admin", "u-admin-2", "u-admin-3"] } } }) });
     const before = await count();
-    check("G-03 jumlah seed = 0 event, 3 org, 0 tempat, 0 pin, 2 user JSON, 0 QR, 3 admin", before.e === 0 && before.o === 3 && before.p === 0 && before.pin === 0 && before.u === 2 && before.qr === 0 && before.adm === 3, before);
+    check("G-03 jumlah seed = 0 event, 3 org, 2 tempat, 0 pin, 2 user JSON, 0 QR, 3 admin", before.e === 0 && before.o === 3 && before.p === 2 && before.pin === 0 && before.u === 2 && before.qr === 0 && before.adm === 3, before);
     if (!process.env.WAYO_SKIP_RESEED) {
       const totals = async () => [await prisma.user.count(), await prisma.place.count(), await prisma.event.count(), await prisma.pin.count(), await prisma.registration.count(), await prisma.notification.count(), await prisma.qrMap.count()].join(",");
       const t0 = await totals();
       execSync("npx tsx prisma/seed.ts", { stdio: "ignore" });
       check("G-00 seed 2x tidak menggandakan data", (await totals()) === t0, { t0, t1: await totals() });
     }
-    check("G-00 ID JSON tetap (user/org); tempat & event contoh tidak di-seed", !!(await prisma.user.findUnique({ where: { id: "u-pengunjung" } })) && !!(await prisma.organizer.findUnique({ where: { id: "org-ft" } })) && !(await prisma.place.findUnique({ where: { id: "pl-fmipa" } })) && !(await prisma.event.findUnique({ where: { id: "ev-invention" } })));
+    check("G-00 ID JSON tetap (user/org + 2 tempat seed); event contoh tidak di-seed", !!(await prisma.user.findUnique({ where: { id: "u-pengunjung" } })) && !!(await prisma.organizer.findUnique({ where: { id: "org-ft" } })) && !!(await prisma.place.findUnique({ where: { id: "pl-jb-rektorat" } })) && !!(await prisma.place.findUnique({ where: { id: "pl-fk" } })) && !(await prisma.event.findUnique({ where: { id: "ev-invention" } })));
     // Tes berikutnya (C–N) masih memakai ID lama pl-*/ev-*/pin-*. Data itu dipasang di sini, bukan oleh seed produksi.
     if (!process.env.WAYO_SKIP_FIXTURES) {
       execSync("npx tsx tests/install-map-fixtures.ts", { stdio: "ignore" });
       const after = await count();
-      check("G-00 fixture tes: 3 event, 23 tempat, 5 pin, 3 QR", after.e === 3 && after.p === 23 && after.pin === 5 && after.qr === 3, after);
+      check("G-00 fixture tes: 3 event, 24 tempat (2 seed + 22 baru), 5 pin, 3 QR", after.e === 3 && after.p === 24 && after.pin === 5 && after.qr === 3, after);
     }
   } else console.log("  (lewati cek DB)");
 

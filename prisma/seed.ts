@@ -1,5 +1,5 @@
 /* Seed idempoten (upsert) dari /data/*.json — api-spec.md §5. ID JSON dipertahankan.
- * Places & pins: array di data/places.json dan data/pins.json dikosongkan (struktur file tetap).
+ * Places: data/places.json berisi 2 tempat seed (Rektorat Jimbaran, FK Sudirman). Pins tetap kosong.
  * Event.placeId wajib (FK non-null), jadi event + turunannya hanya di-seed jika tempat rujukannya ada. */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";

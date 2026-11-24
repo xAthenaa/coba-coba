@@ -1,6 +1,6 @@
 {
  "_contoh": true,
- "_catatan": "Koordinat PERKIRAAN sekitar Kampus Unud Sudirman (Denpasar), bukan hasil survei. Array places dikosongkan: tempat kampus tidak di-seed; admin menambah tempat sendiri.",
+ "_catatan": "Dua tempat seed: koordinat dari OpenStreetMap Nominatim (dicek 2026-11-24). Pin event tetap tidak di-seed. Event contoh tidak di-seed karena placeId/fasilitas rujukannya tidak ada di daftar ini.",
  "center": {
   "lat": -8.6724,
   "lng": 115.2187
@@ -14,7 +14,24 @@
   "info",
   "stand"
  ],
- "places": [],
+ "places": [
+  {
+   "id": "pl-jb-rektorat",
+   "name": "Rektorat Universitas Udayana",
+   "category": "gedung",
+   "lat": -8.79822,
+   "lng": 115.17239,
+   "campusId": "jimbaran"
+  },
+  {
+   "id": "pl-fk",
+   "name": "Gedung Fakultas Kedokteran Universitas Udayana",
+   "category": "gedung",
+   "lat": -8.673441,
+   "lng": 115.21854,
+   "campusId": "sudirman"
+  }
+ ],
  "campus": "Sudirman",
- "_catatan_jimbaran": "Tempat pl-jb-* (campusId jimbaran) sebelumnya dari OpenStreetMap via Nominatim, dicek 2026-11-05. Array dikosongkan bersama tempat Sudirman."
+ "_catatan_koordinat": "pl-jb-rektorat: Nominatim node 4177832352, sama dengan salinan tes (lat/lng 5 desimal). 265 m dari pusat Kampus Jimbaran. pl-fk: Nominatim node 3182035821 (Jalan P.B. Sudirman, Dauh Puri Kelod, Denpasar); nama OSM keliru 'Undayana', nama di data diperbaiki. 117 m dari pusat Kampus Sudirman. Node terdekat bertuliskan nama benar (4409469745, Jalan Ida Bagus Oka) berjarak ~40 m."
 }

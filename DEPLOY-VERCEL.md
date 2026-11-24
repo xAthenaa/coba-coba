@@ -71,7 +71,7 @@ URI ini harus sama dengan `GOOGLE_REDIRECT_URI` / `${BASE_URL}/api/auth/google/c
 
 ## 5. Seed data sekali ke database produksi
 
-Migrasi tabel dijalankan otomatis saat build. Data akun, kampus, dan organizer di-seed; **tempat, pin, dan event contoh tidak** (array `places`/`pins` kosong; event butuh `placeId`). Jalankan **sekali** dari komputer kamu (ganti URL dan password admin):
+Migrasi tabel dijalankan otomatis saat build. Data akun, kampus, organizer, dan 2 tempat seed (Rektorat Jimbaran, FK Sudirman) di-seed; **pin dan event contoh tidak** (array `pins` kosong; event butuh `placeId` yang tidak ada di daftar tempat). Jalankan **sekali** dari komputer kamu (ganti URL dan password admin):
 
 ```bash
 DATABASE_URL="postgresql://...direct..." \

@@ -16,7 +16,7 @@ Skrip DB: `db:migrate` (migrate dev), `db:seed` (idempoten, ID sama dengan data 
 
 Akun demo: `pengunjung@contoh.id` / `demo123` (PENGUNJUNG), `panitia@contoh.id` / `demo123` (PANITIA), serta tiga akun ADMIN: **`admin@wayo.local`**, **`admin2@wayo.local`**, **`admin3@wayo.local`** (password default `admin123`). Mode tamu dihapus.
 Akun Admin **hanya** dibuat oleh seed (`npm run db:seed` / `db:fresh`), tidak bisa lewat Daftar publik atau Google. Ganti di produksi lewat env `WAYO_ADMIN_EMAIL` / `WAYO_ADMIN_PASSWORD` (dan `WAYO_ADMIN2_*`, `WAYO_ADMIN3_*`) sebelum seed.
-Seed tidak mengisi pin event atau tempat kampus (`data/pins.json` dan `data/places.json` array-nya kosong). Event contoh juga tidak di-seed karena `Event.placeId` wajib. Tempat, event, dan pin ditambah lewat Admin/Panitia.
+Seed mengisi dua tempat kampus: Rektorat Universitas Udayana (Jimbaran) dan Gedung Fakultas Kedokteran Universitas Udayana (Sudirman). Pin event tetap kosong (`data/pins.json`). Event contoh tidak di-seed karena `placeId`/fasilitas rujukannya tidak ada di daftar tempat. Tempat, event, dan pin lain ditambah lewat Admin/Panitia.
 
 ### Variabel lingkungan
 | Env | Wajib | Keterangan |
@@ -76,7 +76,7 @@ Envelope `{data}` / `{error:{code,message,fields?}}`. Sesi: cookie httpOnly `way
 - Admin (semua cek ADMIN di server; 401/403): `GET /api/admin/stats`, `GET /api/admin/users?q&role`, `PATCH|DELETE /api/admin/users/[id]` (`{role, active}`), `GET /api/admin/events`, `GET|POST /api/admin/facilities`, `GET|PATCH|DELETE /api/admin/facilities/[id]`, `GET /api/admin/registrations?eventId`, `DELETE /api/admin/registrations/[id]`, `GET /api/admin/pins` (hapus via `DELETE /api/pins/[id]`), `GET /api/admin/notifications`, `DELETE /api/admin/notifications/[id]`. Admin juga boleh `PATCH|DELETE /api/events/[id]`, pin, QR, jadwal, dan surat pengajuan event mana pun.
 
 ## Struktur
-- `data/*.json` — data contoh dari Gigi (bertanda `_contoh`). `places` dan `pins` dikosongkan; kampus & akun tetap di-seed. Salinan data peta untuk tes ada di `tests/fixtures/`.
+- `data/*.json` — data contoh dari Gigi (bertanda `_contoh`). `places` berisi 2 tempat seed (Rektorat Jimbaran & FK Sudirman); `pins` dikosongkan. Salinan data peta lengkap untuk tes ada di `tests/fixtures/`.
 - `src/lib/api.ts` — lapisan akses data **async** (ganti isi fungsi dengan `fetch('/api/...')` saat backend siap). Perubahan (event/pin/daftar) disimpan di localStorage di atas JSON; reset di Profil › Pengaturan.
 - `src/server/*` logika backend (http, auth, validate, rules, serialize, qr, notify) · `src/app/api/**` route handlers · `src/lib/api.ts` hook SWR + mapping · `src/lib/auth.ts` sesi via `/api/me` · `src/middleware.ts` proteksi halaman per peran · `prisma/` skema, migrasi, seed.
 - `src/lib/tokens.ts` + `src/app/globals.css` (`@theme`) — design tokens dari `design-tokens.md` (Bocil).
