@@ -14,8 +14,9 @@ npm run dev            # http://localhost:3000
 ```
 Skrip DB: `db:migrate` (migrate dev), `db:seed` (idempoten, ID sama dengan data JSON), `db:fresh` (migrate deploy + kosongkan semua baris + seed; dipakai tes), `db:reset` (`prisma migrate reset`, merusak data).
 
-Akun demo: `pengunjung@contoh.id` / `demo123` (PENGUNJUNG), `panitia@contoh.id` / `demo123` (PANITIA), **`admin@wayo.local` / `admin123` (ADMIN)**. Mode tamu dihapus.
-Akun Admin **hanya** dibuat oleh seed (`npm run db:seed` / `db:fresh`), tidak bisa lewat Daftar publik atau Google. Ganti di produksi lewat env `WAYO_ADMIN_EMAIL` / `WAYO_ADMIN_PASSWORD` sebelum seed.
+Akun demo: `pengunjung@contoh.id` / `demo123` (PENGUNJUNG), `panitia@contoh.id` / `demo123` (PANITIA), serta tiga akun ADMIN: **`admin@wayo.local`**, **`admin2@wayo.local`**, **`admin3@wayo.local`** (password default `admin123`). Mode tamu dihapus.
+Akun Admin **hanya** dibuat oleh seed (`npm run db:seed` / `db:fresh`), tidak bisa lewat Daftar publik atau Google. Ganti di produksi lewat env `WAYO_ADMIN_EMAIL` / `WAYO_ADMIN_PASSWORD` (dan `WAYO_ADMIN2_*`, `WAYO_ADMIN3_*`) sebelum seed.
+Seed tidak mengisi pin event atau tempat kampus (`data/pins.json` dan `data/places.json` array-nya kosong). Event contoh juga tidak di-seed karena `Event.placeId` wajib. Tempat, event, dan pin ditambah lewat Admin/Panitia.
 
 ### Variabel lingkungan
 | Env | Wajib | Keterangan |
@@ -25,7 +26,9 @@ Akun Admin **hanya** dibuat oleh seed (`npm run db:seed` / `db:fresh`), tidak bi
 | `BLOB_READ_WRITE_TOKEN` | di Vercel | Token Vercel Blob; kosong = file di disk `data/uploads` & `data/proposals` |
 | `BASE_URL` | disarankan | Origin publik; dipakai untuk tautan reset password & redirect Google |
 | `WAYO_DEMO` | tidak | `1` = aktifkan `/api/dev/qr-sample` |
-| `WAYO_ADMIN_EMAIL`, `WAYO_ADMIN_PASSWORD` | tidak | Akun admin seed (default `admin@wayo.local` / `admin123`) |
+| `WAYO_ADMIN_EMAIL`, `WAYO_ADMIN_PASSWORD` | tidak | Akun admin seed `u-admin` (default `admin@wayo.local` / `admin123`) |
+| `WAYO_ADMIN2_EMAIL`, `WAYO_ADMIN2_PASSWORD` | tidak | Akun admin seed `u-admin-2` (default `admin2@wayo.local` / `admin123`) |
+| `WAYO_ADMIN3_EMAIL`, `WAYO_ADMIN3_PASSWORD` | tidak | Akun admin seed `u-admin-3` (default `admin3@wayo.local` / `admin123`) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | untuk Google | OAuth 2.0 Client (Web) dari Google Cloud Console. Kosong → tombol Google menampilkan pesan "belum dikonfigurasi" |
 | `GOOGLE_REDIRECT_URI` | tidak | Default `${BASE_URL}/api/auth/google/callback`; daftarkan di "Authorized redirect URIs" |
 | `GOOGLE_AUTH_URL`, `GOOGLE_TOKEN_URL`, `GOOGLE_USERINFO_URL` | tidak | Hanya untuk tes (mock `tests/google-mock.mjs`) |
@@ -52,7 +55,7 @@ npx playwright install chromium
 npm run test:e2e                      # build dulu; server :3100 dengan db:fresh
 SHOTS=1 npm run shots                 # screenshot
 ```
-Jalankan `npm run db:fresh` sebelum `test:api` agar data deterministik.
+Jalankan `npm run db:fresh` sebelum `test:api` agar data deterministik. `test:api` (dan e2e) kemudian memasang data peta contoh lewat `tests/install-map-fixtures.ts` (ID `pl-*` / `ev-*` / `pin-*`), karena seed produksi tidak mengisi tempat, pin, atau event.
 Tes Google OAuth memakai mock lokal (`tests/google-mock.mjs`, port 3918). Jalankan server dengan
 `GOOGLE_CLIENT_ID=test GOOGLE_CLIENT_SECRET=test GOOGLE_AUTH_URL=http://localhost:3918/auth GOOGLE_TOKEN_URL=http://localhost:3918/token GOOGLE_USERINFO_URL=http://localhost:3918/userinfo GOOGLE_REDIRECT_URI=http://localhost:<port>/api/auth/google/callback`;
 tanpa env Google, tes memeriksa pesan "belum dikonfigurasi".
@@ -73,7 +76,7 @@ Envelope `{data}` / `{error:{code,message,fields?}}`. Sesi: cookie httpOnly `way
 - Admin (semua cek ADMIN di server; 401/403): `GET /api/admin/stats`, `GET /api/admin/users?q&role`, `PATCH|DELETE /api/admin/users/[id]` (`{role, active}`), `GET /api/admin/events`, `GET|POST /api/admin/facilities`, `GET|PATCH|DELETE /api/admin/facilities/[id]`, `GET /api/admin/registrations?eventId`, `DELETE /api/admin/registrations/[id]`, `GET /api/admin/pins` (hapus via `DELETE /api/pins/[id]`), `GET /api/admin/notifications`, `DELETE /api/admin/notifications/[id]`. Admin juga boleh `PATCH|DELETE /api/events/[id]`, pin, QR, jadwal, dan surat pengajuan event mana pun.
 
 ## Struktur
-- `data/*.json` — data contoh dari Gigi (bertanda `_contoh`), Kampus Sudirman.
+- `data/*.json` — data contoh dari Gigi (bertanda `_contoh`). `places` dan `pins` dikosongkan; kampus & akun tetap di-seed. Salinan data peta untuk tes ada di `tests/fixtures/`.
 - `src/lib/api.ts` — lapisan akses data **async** (ganti isi fungsi dengan `fetch('/api/...')` saat backend siap). Perubahan (event/pin/daftar) disimpan di localStorage di atas JSON; reset di Profil › Pengaturan.
 - `src/server/*` logika backend (http, auth, validate, rules, serialize, qr, notify) · `src/app/api/**` route handlers · `src/lib/api.ts` hook SWR + mapping · `src/lib/auth.ts` sesi via `/api/me` · `src/middleware.ts` proteksi halaman per peran · `prisma/` skema, migrasi, seed.
 - `src/lib/tokens.ts` + `src/app/globals.css` (`@theme`) — design tokens dari `design-tokens.md` (Bocil).

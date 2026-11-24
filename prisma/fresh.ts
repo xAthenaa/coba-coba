@@ -1,4 +1,5 @@
-/* Kosongkan semua baris (tanpa drop skema) lalu seed ulang. Dipakai sebelum tes API/e2e agar hasil deterministik. */
+/* Kosongkan semua baris (tanpa drop skema) lalu seed ulang. Dipakai sebelum tes API/e2e agar hasil deterministik.
+ * Seed tidak mengisi Place/Pin (array JSON kosong). Tes yang butuh ID lama menjalankan tests/install-map-fixtures.ts setelah ini. */
 import { PrismaClient } from "@prisma/client";
 import { execSync } from "node:child_process";
 const db = new PrismaClient();

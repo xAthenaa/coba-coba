@@ -50,6 +50,8 @@ Project → Settings → Environment Variables. Isi minimal Production (dan Prev
 | `BLOB_READ_WRITE_TOKEN` | ya di produksi | Token Blob dari langkah 2 |
 | `WAYO_ADMIN_EMAIL` | ya sebelum seed | Email admin **baru**, jangan `admin@wayo.local` |
 | `WAYO_ADMIN_PASSWORD` | ya sebelum seed | Password kuat, **jangan** `admin123` |
+| `WAYO_ADMIN2_EMAIL`, `WAYO_ADMIN2_PASSWORD` | tidak | Admin kedua (`u-admin-2`, default `admin2@wayo.local` / `admin123`). Ganti bila akun ini dipakai di produksi. |
+| `WAYO_ADMIN3_EMAIL`, `WAYO_ADMIN3_PASSWORD` | tidak | Admin ketiga (`u-admin-3`, default `admin3@wayo.local` / `admin123`). Ganti bila akun ini dipakai di produksi. |
 | `WAYO_DEMO` | tidak | Kosongkan di produksi (jangan `1`) |
 | `GOOGLE_CLIENT_ID` | untuk login Google | dari Google Cloud Console |
 | `GOOGLE_CLIENT_SECRET` | untuk login Google | dari Google Cloud Console |
@@ -69,13 +71,17 @@ URI ini harus sama dengan `GOOGLE_REDIRECT_URI` / `${BASE_URL}/api/auth/google/c
 
 ## 5. Seed data sekali ke database produksi
 
-Migrasi tabel dijalankan otomatis saat build. Data contoh (tempat, event, akun demo) **tidak** ikut otomatis. Jalankan **sekali** dari komputer kamu (ganti URL dan password admin):
+Migrasi tabel dijalankan otomatis saat build. Data akun, kampus, dan organizer di-seed; **tempat, pin, dan event contoh tidak** (array `places`/`pins` kosong; event butuh `placeId`). Jalankan **sekali** dari komputer kamu (ganti URL dan password admin):
 
 ```bash
 DATABASE_URL="postgresql://...direct..." \
 DIRECT_URL="postgresql://...direct..." \
 WAYO_ADMIN_EMAIL="admin@organisasi-anda.id" \
 WAYO_ADMIN_PASSWORD="password-kuat-anda" \
+WAYO_ADMIN2_EMAIL="admin2@organisasi-anda.id" \
+WAYO_ADMIN2_PASSWORD="password-kuat-anda-2" \
+WAYO_ADMIN3_EMAIL="admin3@organisasi-anda.id" \
+WAYO_ADMIN3_PASSWORD="password-kuat-anda-3" \
 npm run db:seed
 ```
 
@@ -83,7 +89,7 @@ Pakai URL **direct** (bukan pooler). Jangan jalankan `db:fresh` atau `db:reset` 
 
 ## 6. Ganti password admin
 
-Akun admin hanya dibuat oleh seed. Setelah seed, masuk dengan email/password yang kamu set di langkah 5. Bila masih memakai default `admin@wayo.local` / `admin123`, segera seed ulang dengan `WAYO_ADMIN_*` yang baru (upsert akan menimpa password admin `u-admin`) atau ganti manual di database.
+Akun admin hanya dibuat oleh seed (`u-admin`, `u-admin-2`, `u-admin-3`). Setelah seed, masuk dengan email/password yang kamu set di langkah 5. Bila masih memakai default `admin@wayo.local` / `admin2@wayo.local` / `admin3@wayo.local` dan `admin123`, segera seed ulang dengan `WAYO_ADMIN_*` / `WAYO_ADMIN2_*` / `WAYO_ADMIN3_*` yang baru (upsert akan menimpa password masing-masing) atau ganti manual di database.
 
 ## 7. Deploy
 
