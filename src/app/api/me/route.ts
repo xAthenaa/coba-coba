@@ -1,10 +1,15 @@
 import { db } from "@/server/db";
 import { E, ok, readJson, route } from "@/server/http";
-import { requireUser } from "@/server/auth";
+import { NextResponse } from "next/server";
+import { clearCookies, getUser, requireUser } from "@/server/auth";
 import { userOut } from "@/server/serialize";
 import { REQ, isEmail, isStr, strOrNull } from "@/server/validate";
 
-export const GET = route(async () => ok(userOut(await requireUser())));
+export const GET = route(async () => {
+  const u = await getUser(); // validasi token ke tabel Session (ada & belum kedaluwarsa)
+  if (!u) return clearCookies(NextResponse.json({ error: { code: "UNAUTHENTICATED", message: "Silakan masuk terlebih dahulu" } }, { status: 401 }));
+  return ok(userOut(u));
+});
 export const PATCH = route(async (req) => {
   const u = await requireUser();
   const b = await readJson(req); // field `role` diabaikan

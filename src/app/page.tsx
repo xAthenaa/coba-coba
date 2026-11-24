@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth";
+import { roleHome, useSession } from "@/lib/auth";
 
 /** S-00 Splash → L-01 (atau beranda jika sudah login) */
 export default function Splash() {
@@ -9,7 +9,7 @@ export default function Splash() {
   const s = useSession();
   useEffect(() => {
     if (s === undefined) return;
-    const t = setTimeout(() => r.replace(s ? (s.role === "panitia" ? "/panitia" : "/home") : "/login"), 1200);
+    const t = setTimeout(() => r.replace(s ? roleHome(s.role) : "/login"), 1200);
     return () => clearTimeout(t);
   }, [s, r]);
   return (

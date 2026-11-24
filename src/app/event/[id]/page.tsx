@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { BackButton, Button, Badge, Empty } from "@/components/ui";
 import { Poster } from "@/components/Poster";
 import { Icon } from "@/components/Icon";
+import { ScheduleList } from "@/components/ScheduleEditor";
 import { useToast } from "@/components/Toast";
 import { registerEvent, useEvent, usePlaceIndex } from "@/lib/api";
 import { useSession } from "@/lib/auth";
@@ -24,7 +25,8 @@ export default function DetailEvent() {
   const st = eventStatus(e);
   const done = st === "selesai";
   const reg = !!e.registered;
-  const isPanitia = s?.role === "panitia";
+  const full = e.quota != null && (e.remaining ?? 0) <= 0;
+  const isPanitia = s?.role === "panitia" || s?.role === "admin";
   const daftar = async () => {
     try {
       await registerEvent(e.id);
@@ -49,6 +51,9 @@ export default function DetailEvent() {
         </div>
         <section><h2 className="mb-1 text-base font-semibold">Deskripsi</h2><p className="text-sm text-ink-2">{e.description}</p></section>
         {e.speakers.length > 0 && <section><h2 className="mb-1 text-base font-semibold">Narasumber</h2><p className="text-sm text-ink-2">{e.speakers.join(", ")}</p></section>}
+        {e.quota != null && <section><h2 className="mb-1 text-base font-semibold">Kuota peserta</h2>
+          <p className="text-sm text-ink-2">{(e.remaining ?? 0) > 0 ? <>Sisa kuota <b className="text-ink">{e.remaining}</b> dari {e.quota} peserta</> : <b className="text-danger">Kuota penuh ({e.quota} peserta)</b>}</p></section>}
+        {e.schedule.length > 0 && <section><h2 className="mb-2 text-base font-semibold">Jadwal Kegiatan</h2><ScheduleList items={e.schedule} /></section>}
         {e.facilities.length > 0 && <section><h2 className="mb-2 text-base font-semibold">Fasilitas terdekat</h2>
           <div className="flex flex-wrap gap-2">{e.facilities.map((f) => { const p = getPlace(f); return p && <Link key={f} href={`/peta/tempat/${f}`} className="rounded-full border border-line px-3 py-1 text-xs">{p.name}</Link>; })}</div></section>}
         {done ? (
@@ -58,7 +63,7 @@ export default function DetailEvent() {
           </div>
         ) : (
           <div className="space-y-3 pt-2">
-            {isPanitia ? null : reg ? <Button disabled>✓ Sudah terdaftar</Button> : <Button onClick={daftar}>Daftar Sekarang</Button>}
+            {isPanitia ? null : reg ? <Button disabled>✓ Sudah terdaftar</Button> : full ? <Button disabled>Kuota penuh</Button> : <Button onClick={daftar}>Daftar Sekarang</Button>}
             <div className="grid grid-cols-2 gap-3">
               <Button variant="secondary" href={`/peta?fokus=${e.placeId}`}>Lihat di peta</Button>
               <Button variant="secondary" href={`/peta/rute/${e.placeId}?event=${e.id}`}>Rute ke lokasi</Button>

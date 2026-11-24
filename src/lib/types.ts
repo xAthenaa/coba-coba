@@ -8,8 +8,10 @@ export interface Place extends LatLng {
 export interface Organizer { id: string; name: string; logo: string; description: string; contact: string; faculty: string }
 export interface WEvent {
   id: string; organizerId: string; name: string; description: string; poster: string; placeId: string;
-  faculty: string; start: string; end: string; speakers: string[]; facilities: string[]; status?: string;
+  faculty: string; start: string; end: string; speakers: string[]; facilities: string[]; status?: string; quota?: number | null;
 }
+export interface ScheduleItem { id: string; eventId: string; title: string; start: string; end: string; speaker?: string; location?: string }
+export interface Proposal { name: string; uploadedAt: string; url: string }
 export interface Pin extends LatLng {
   id: string; eventId: string; label: string; category: Category; type: "timed" | "permanent"; start?: string; end?: string;
 }

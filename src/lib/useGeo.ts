@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { campuses, DEFAULT_CAMPUS } from "./data";
+import { campuses, campusOf, DEFAULT_CAMPUS } from "./data";
 import { distance } from "./geo";
 import type { LatLng } from "./types";
 
@@ -9,6 +9,11 @@ export const LOC_PREF = "wayo-loc-pref"; // "allow" | "later"
 
 /** Titik masuk kampus dipakai sebagai posisi simulasi bila GPS jauh dari kampus / tidak tersedia. */
 export const SIM_START: LatLng = { lat: -8.6728, lng: 115.2192 };
+
+/** Gerbang/titik masuk kampus tujuan, dipakai bila GPS mati atau di luar kampus. */
+export function simStartFor(dest: LatLng): LatLng {
+  return campusOf(dest) === "jimbaran" ? campuses.jimbaran.center : SIM_START;
+}
 
 export function useGeo(): { pos: LatLng | null; state: GeoState } {
   const [pos, setPos] = useState<LatLng | null>(null);

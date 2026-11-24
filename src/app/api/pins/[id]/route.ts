@@ -6,7 +6,7 @@ import { ownedEvent, validatePin } from "@/server/rules";
 
 type P = { id: string };
 async function ownedPin(id: string, u: AuthUser) {
-  if (u.role !== "ORGANIZER") throw E.forbidden("Hanya untuk panitia");
+  if (u.role !== "ORGANIZER" && u.role !== "ADMIN") throw E.forbidden("Hanya untuk panitia");
   const p = await db.pin.findUnique({ where: { id } });
   if (!p) throw E.notFound("Pin tidak ditemukan");
   await ownedEvent(p.eventId, u);
@@ -16,7 +16,7 @@ export const GET = route<P>(async (_r, { id }) => {
   const u = await requireUser();
   const p = await db.pin.findUnique({ where: { id }, include: { event: true } });
   if (!p) throw E.notFound("Pin tidak ditemukan");
-  const owner = u.organizer?.id === p.event.organizerId;
+  const owner = u.role === "ADMIN" || u.organizer?.id === p.event.organizerId;
   if (!owner && pinStatus(p) !== "ACTIVE") throw E.notFound("Pin tidak ditemukan");
   return ok(pinOut(p));
 });

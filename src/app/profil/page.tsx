@@ -16,7 +16,7 @@ export default function Profil() {
   const menu = [
     { href: "/profil/edit", icon: "edit", label: "Edit Profil" },
     { href: "/notifikasi", icon: "bell", label: "Notifikasi" },
-    s?.role === "panitia" ? { href: "/panitia", icon: "grid", label: "Kelola Event" } : { href: "/event-saya", icon: "star", label: "Event Saya" },
+    s?.role === "admin" ? { href: "/admin", icon: "grid", label: "Dashboard Admin" } : s?.role === "panitia" ? { href: "/panitia", icon: "grid", label: "Kelola Event" } : { href: "/event-saya", icon: "star", label: "Event Saya" },
     { href: "/penyelenggara", icon: "user", label: "Penyelenggara" },
     { href: "/profil/faq", icon: "help", label: "Bantuan & FAQ" },
     { href: "/profil/pengaturan", icon: "gear", label: "Pengaturan" },
@@ -28,7 +28,7 @@ export default function Profil() {
         <span className="flex h-24 w-24 items-center justify-center rounded-full bg-primary-soft text-2xl font-bold text-primary">{initials(name)}</span>
         <p className="mt-3 text-lg font-semibold">{name}</p>
         <p className="text-sm text-ink-2">{s?.email}</p>
-        <div className="mt-2"><Badge>{s?.role === "panitia" ? "Panitia" : "Pengunjung"}</Badge></div>
+        <div className="mt-2"><Badge>{s?.role === "admin" ? "Admin" : s?.role === "panitia" ? "Panitia" : "Pengunjung"}</Badge></div>
       </div>
       <ul className="divide-y divide-line rounded-xl border border-line">
         {menu.map((m) => (

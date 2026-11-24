@@ -32,10 +32,15 @@ function Detail() {
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-xl bg-soft p-3"><p className="text-lg font-bold text-primary">{pins.length}</p><p className="text-xs text-ink-2">Pin</p></div>
         <div className="rounded-xl bg-soft p-3"><p className="text-lg font-bold text-primary">{pins.filter((p) => pinStatus(p) === "Aktif").length}</p><p className="text-xs text-ink-2">Aktif</p></div>
-        <div className="rounded-xl bg-soft p-3"><p className="text-lg font-bold text-primary">{e.registrantCount ?? 0}</p><p className="text-xs text-ink-2">Pendaftar</p></div>
+        <div className="rounded-xl bg-soft p-3"><p className="text-lg font-bold text-primary">{e.registrantCount ?? 0}{e.quota ? `/${e.quota}` : ""}</p><p className="text-xs text-ink-2">Pendaftar</p></div>
+      </div>
+      <div className="mt-3 space-y-1 text-xs text-ink-2">
+        <p>Kuota: {e.quota ? `${e.quota} peserta · sisa ${e.remaining ?? 0}` : "tanpa batas"}</p>
+        <p>Surat pengajuan: {e.proposal ? <a href={e.proposal.url} target="_blank" rel="noreferrer" className="font-medium text-primary underline">{e.proposal.name}</a> : "belum diunggah"}</p>
       </div>
       <div className="mt-5 space-y-3 pb-4">
         <Button href={`/panitia/event/${e.id}/pin`}><Icon name="pin" size={18} />Kelola Pin</Button>
+        <Button variant="secondary" href={`/panitia/event/${e.id}/jadwal`}><Icon name="calendar" size={18} />Jadwal Kegiatan ({e.schedule.length})</Button>
         <Button variant="secondary" href={`/panitia/event/${e.id}/qr`}><Icon name="qr" size={18} />QR Peta</Button>
         <div className="grid grid-cols-2 gap-3">
           <Button variant="secondary" href={`/panitia/event/${e.id}/edit`}><Icon name="edit" size={18} />Edit</Button>

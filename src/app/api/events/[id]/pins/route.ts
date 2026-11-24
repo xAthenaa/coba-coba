@@ -10,7 +10,7 @@ export const GET = route<P>(async (_r, { id }) => {
   const u = await requireUser();
   const ev = await db.event.findUnique({ where: { id } });
   if (!ev) throw E.notFound("Event tidak ditemukan");
-  const owner = u.organizer?.id === ev.organizerId;
+  const owner = u.role === "ADMIN" || u.organizer?.id === ev.organizerId;
   const pins = await db.pin.findMany({ where: { eventId: id }, orderBy: { createdAt: "asc" } });
   return ok(pins.filter((p) => owner || pinStatus(p) === "ACTIVE").map(pinOut));
 });

@@ -17,12 +17,19 @@ const panitia = [
   { href: "/profil", label: "Profil", icon: "user" },
 ];
 
+const admin = [
+  { href: "/admin", label: "Admin", icon: "grid" },
+  { href: "/home", label: "Home", icon: "home" },
+  { href: "/peta", label: "Peta", icon: "map" },
+  { href: "/profil", label: "Profil", icon: "user" },
+];
+
 export function BottomNav() {
   const path = usePathname();
   const s = useSession();
-  const items = s?.role === "panitia" ? panitia : visitor;
+  const items = s?.role === "admin" ? admin : s?.role === "panitia" ? panitia : visitor;
   return (
-    <nav aria-label={s?.role === "panitia" ? "Navbar Panitia" : "Navbar Pengunjung"} className="z-30 shrink-0 border-t border-line bg-white px-6 pb-3 pt-2">
+    <nav aria-label={s?.role === "admin" ? "Navbar Admin" : s?.role === "panitia" ? "Navbar Panitia" : "Navbar Pengunjung"} className="z-30 shrink-0 border-t border-line bg-white px-6 pb-3 pt-2">
       <ul className="grid grid-cols-4">
         {items.map((it) => {
           const active = path === it.href || (it.href !== "/home" && path.startsWith(it.href));

@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
-import { E, ok, route } from "@/server/http";
-import { requireUser } from "@/server/auth";
+import { E, ok, readJson, route } from "@/server/http";
+import { requireAdmin, requireUser } from "@/server/auth";
+import { validatePlace } from "@/server/rules";
 import { placeOut } from "@/server/serialize";
 import { haversineM, walkMin } from "@/server/geo";
 import { CATEGORIES, asEnum } from "@/server/validate";
@@ -26,4 +27,11 @@ export const GET = route(async (req) => {
     return ok(list.map((p) => { const d = Math.round(haversineM({ lat: la, lng: ln }, p)); return { ...p, distanceM: d, walkMin: walkMin(d) }; }).sort((a, b) => a.distanceM - b.distanceM));
   }
   return ok(list);
+});
+
+/** Tambah tempat (data master) — Admin saja. */
+export const POST = route(async (req) => {
+  await requireAdmin();
+  const v = await validatePlace(await readJson(req));
+  return ok(placeOut(await db.place.create({ data: v })), 201);
 });

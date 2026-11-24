@@ -6,6 +6,8 @@ import { startSession } from "@/server/auth";
 import { userOut } from "@/server/serialize";
 import { REQ, isStr } from "@/server/validate";
 
+export const runtime = "nodejs";
+
 export const POST = route(async (req) => {
   const b = await readJson(req);
   const f: Record<string, string> = {};
@@ -15,5 +17,6 @@ export const POST = route(async (req) => {
   const user = await db.user.findUnique({ where: { email: (b.email as string).trim().toLowerCase() }, include: { organizer: true } });
   if (!user || !(await bcrypt.compare(b.password as string, user.passwordHash)))
     throw new ApiError(401, "INVALID_CREDENTIALS", "Email atau kata sandi salah");
+  if (!user.active) throw new ApiError(403, "ACCOUNT_DISABLED", "Akun ini dinonaktifkan oleh admin");
   return startSession(NextResponse.json({ data: userOut(user) }), user);
 });

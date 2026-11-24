@@ -10,17 +10,19 @@ export const ROLE_COOKIE = "wayo_role"; // petunjuk UI/middleware saja; otorisas
 const WEEK = 7 * 24 * 3600;
 export const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
+const cookieBase = () => ({ sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/" });
 export async function startSession(res: NextResponse, user: User) {
   const token = randomBytes(32).toString("hex");
   await db.session.create({ data: { tokenHash: sha256(token), userId: user.id, expiresAt: new Date(Date.now() + WEEK * 1000) } });
-  const base = { sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: WEEK };
+  const base = { ...cookieBase(), maxAge: WEEK };
   res.cookies.set(COOKIE, token, { ...base, httpOnly: true });
   res.cookies.set(ROLE_COOKIE, user.role, { ...base, httpOnly: false });
   return res;
 }
 export function clearCookies(res: NextResponse) {
-  res.cookies.set(COOKIE, "", { path: "/", maxAge: 0 });
-  res.cookies.set(ROLE_COOKIE, "", { path: "/", maxAge: 0 });
+  const gone = { ...cookieBase(), maxAge: 0, expires: new Date(0) };
+  res.cookies.set(COOKIE, "", { ...gone, httpOnly: true });
+  res.cookies.set(ROLE_COOKIE, "", { ...gone, httpOnly: false });
   return res;
 }
 
@@ -31,17 +33,20 @@ export async function getUser() {
   if (!token) return null;
   const s = await db.session.findUnique({ where: { tokenHash: sha256(token) }, include: { user: { include: { organizer: true } } } });
   if (!s) return null;
+  if (!s.user.active) return null; // akun dinonaktifkan Admin
   if (s.expiresAt < new Date()) { await db.session.delete({ where: { id: s.id } }).catch(() => {}); return null; }
   return s.user;
 }
 export type AuthUser = NonNullable<Awaited<ReturnType<typeof getUser>>>;
 
-export async function requireUser(role?: "VISITOR" | "ORGANIZER") {
+const ROLE_MSG = { ORGANIZER: "Hanya untuk panitia", VISITOR: "Hanya untuk pengunjung", ADMIN: "Hanya untuk admin" } as const;
+export async function requireUser(role?: "VISITOR" | "ORGANIZER" | "ADMIN") {
   const u = await getUser();
   if (!u) throw E.unauth();
-  if (role && u.role !== role) throw E.forbidden(role === "ORGANIZER" ? "Hanya untuk panitia" : "Hanya untuk pengunjung");
+  if (role && u.role !== role) throw E.forbidden(ROLE_MSG[role]);
   return u;
 }
+export const requireAdmin = () => requireUser("ADMIN");
 export async function requireOrganizer() {
   const u = await requireUser("ORGANIZER");
   if (!u.organizer) throw E.forbidden("Akun panitia belum punya penyelenggara");

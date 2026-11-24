@@ -20,7 +20,7 @@ export function MapButtons({ onLocate, locActive, showScan = true }: { onLocate:
     <>
       <div className="absolute right-3 top-3 z-[500]"><Compass /></div>
       <div className="absolute bottom-3 right-3 z-[500] flex flex-col gap-3">
-        {showScan && <button aria-label="Scan QR Peta" onClick={() => { if (s?.role === "panitia") toast("Scan QR khusus pengunjung", "error"); else r.push("/scan"); }}
+        {showScan && <button aria-label="Scan QR Peta" onClick={() => { if (s?.role === "panitia" || s?.role === "admin") toast("Scan QR khusus pengunjung", "error"); else r.push("/scan"); }}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg"><Icon name="qr" /></button>}
         <button aria-label="Lokasi saya" aria-pressed={locActive} onClick={onLocate}
           className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary shadow-lg ${locActive ? "bg-primary text-white" : "bg-white text-primary"}`}><Icon name="locate" /></button>

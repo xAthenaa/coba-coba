@@ -26,7 +26,7 @@ export const GET = route(async (req) => {
   const mine = new Set(regs.map((r) => r.eventId));
   return ok(events
     .filter((e) => (!q || e.name.toLowerCase().includes(q) || e.organizer.name.toLowerCase().includes(q)) && (!status || eventStatus(e) === status))
-    .map((e) => eventOut(e, { registered: mine.has(e.id) })));
+    .map((e) => eventOut(e, { registered: mine.has(e.id) }, u)));
 });
 
 export const POST = route(async (req) => {
@@ -35,11 +35,11 @@ export const POST = route(async (req) => {
   const e = await db.event.create({
     data: {
       organizerId: organizer.id, placeId: v.placeId, name: v.name, description: v.description, posterUrl: v.posterUrl, faculty: v.faculty,
-      startAt: v.startAt, endAt: v.endAt, speakers: JSON.stringify(v.speakers),
+      startAt: v.startAt, endAt: v.endAt, speakers: JSON.stringify(v.speakers), quota: v.quota,
       facilities: { create: v.facilities.map((placeId) => ({ placeId })) },
       qr: { create: { code: qrCode(), targetPlaceId: v.placeId } },
     },
     include: eventInclude,
   });
-  return ok(eventOut(e, { registered: false }), 201);
+  return ok(eventOut(e, { registered: false }, { role: "ORGANIZER", organizer }), 201);
 });

@@ -43,3 +43,5 @@ next-env.d.ts
 /playwright-report
 /prisma/*.db*
 !.env.example
+/data/uploads/
+/data/proposals/
