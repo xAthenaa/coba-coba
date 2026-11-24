@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { G, OAUTH_COOKIE, encodeState, googleConfigured, redirectUri, safeNext } from "@/server/google";
 import { ROLES, asEnum } from "@/server/validate";
 
+export const runtime = "nodejs";
+
 /** Mulai OAuth Google. ?mode=login|daftar &role=VISITOR|ORGANIZER (wajib untuk daftar) &next=/path */
 export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;

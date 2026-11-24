@@ -5,6 +5,8 @@ import { db } from "@/server/db";
 import { startSession } from "@/server/auth";
 import { OAUTH_COOKIE, decodeState, exchangeCode, googleConfigured } from "@/server/google";
 
+export const runtime = "nodejs";
+
 const home = (role: string) => (role === "ADMIN" ? "/admin" : role === "ORGANIZER" ? "/panitia" : "/home");
 
 /** Callback OAuth Google: verifikasi state, tukar code → profil, lalu masuk / daftar. Akun ADMIN tidak pernah dibuat lewat Google. */

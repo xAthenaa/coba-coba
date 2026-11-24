@@ -10,7 +10,7 @@ export const POST = route<P>(async (_r, { id }) => {
   if (ev.endAt <= new Date()) throw E.bad("EVENT_ENDED", "Event sudah selesai");
   const exist = await db.registration.findUnique({ where: { userId_eventId: { userId: u.id, eventId: id } } });
   if (exist) throw E.conflict("Kamu sudah terdaftar di event ini");
-  // Cek kuota & simpan dalam satu transaksi (SQLite menserialkan penulisan).
+  // Cek kuota & simpan dalam satu transaksi agar tidak melebihi kuota.
   const r = await db.$transaction(async (tx) => {
     if (ev.quota != null && (await tx.registration.count({ where: { eventId: id } })) >= ev.quota)
       throw new ApiError(409, "EVENT_FULL", "Kuota peserta event ini sudah penuh");

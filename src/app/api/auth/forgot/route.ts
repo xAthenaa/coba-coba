@@ -3,6 +3,8 @@ import { E, ok, readJson, route } from "@/server/http";
 import { isEmail } from "@/server/validate";
 import { baseUrl, issueReset } from "@/server/reset";
 
+export const runtime = "nodejs";
+
 const MSG = "Jika email terdaftar, tautan atur ulang kata sandi telah dikirim.";
 /** Selalu 200 dengan pesan yang sama (tidak membocorkan email terdaftar). Email via SMTP; tanpa SMTP → tautan dicetak di console server. */
 export const POST = route(async (req) => {

@@ -1,13 +1,16 @@
-// WAYO — skema Prisma (api-spec.md §1). Portabel SQLite ⇄ PostgreSQL:
+// WAYO — skema Prisma (api-spec.md §1) untuk PostgreSQL.
 // enum disimpan sebagai String + validasi di kode (src/server/validate.ts), speakers = JSON string.
-// Ganti ke PostgreSQL: provider = "postgresql" dan DATABASE_URL="postgresql://user:pass@host:5432/wayo".
+// Lokal & produksi memakai DATABASE_URL Postgres. DIRECT_URL = koneksi langsung (tanpa pooler) untuk migrasi.
+// binaryTargets: native (dev) + rhel-openssl-3.0.x (Vercel / Amazon Linux).
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -117,7 +120,7 @@ model Event {
   endAt         DateTime
   speakers      String          @default("[]") // JSON array of strings
   quota         Int? // kuota peserta; null = tanpa batas
-  proposalFile  String? // nama file surat pengajuan (PDF) di data/proposals (privat)
+  proposalFile  String? // nama file surat pengajuan (PDF) di storage (privat; disk lokal atau Vercel Blob)
   proposalName  String? // nama file asli untuk diunduh
   proposalAt    DateTime?
   createdAt     DateTime        @default(now())
