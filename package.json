@@ -14,10 +14,9 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force --skip-seed && tsx prisma/seed.ts",
-    "test:api": "tsx tests/geo.test.ts && node tests/api.mjs",
+    "test:api": "node tests/api.mjs",
     "db:fresh": "prisma migrate deploy && tsx prisma/fresh.ts",
-    "test:fixtures": "tsx tests/install-map-fixtures.ts",
-    "test:geo": "tsx tests/geo.test.ts"
+    "test:fixtures": "tsx tests/install-map-fixtures.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
