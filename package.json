@@ -15,6 +15,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force --skip-seed && tsx prisma/seed.ts",
     "test:api": "node tests/api.mjs",
+    "test:campus": "tsx --test tests/campusRouter.test.ts",
     "db:fresh": "prisma migrate deploy && tsx prisma/fresh.ts",
     "test:fixtures": "tsx tests/install-map-fixtures.ts"
   },
