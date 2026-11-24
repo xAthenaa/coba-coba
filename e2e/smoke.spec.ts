@@ -156,10 +156,17 @@ test("panitia: buat event → tambah pin → pengunjung daftar & dapat notifikas
 });
 
 test("flow: scan simulasi → peta dari QR", async ({ page }) => {
+  // /api/dev/qr-sample hanya mengembalikan event yang belum berakhir. Event contoh di fixture sudah lewat (Nov 2026), jadi buat event aktif dulu.
+  const org = await page.request.post("/api/auth/login", { data: { email: "panitia@contoh.id", password: "demo123" } });
+  expect(org.status()).toBe(200);
+  const live = (await (await page.request.post("/api/events", { data: { name: "Scan E2E", faculty: "Teknik", placeId: "pl-auditorium", startAt: new Date(Date.now() - 3600e3).toISOString(), endAt: new Date(Date.now() + 48 * 3600e3).toISOString() } })).json()).data;
+  expect(live?.id).toBeTruthy();
   await login(page, "pengunjung");
   await page.goto("/scan");
   await page.getByRole("button", { name: "Izinkan" }).click();
   await page.getByRole("button", { name: /Simulasi scan/ }).click();
-  await expect(page).toHaveURL(/\/peta\/event\//);
+  await expect(page).toHaveURL(new RegExp(`/peta/event/${live.id}`));
   await expect(page.getByText(/Peta dari QR/)).toBeVisible();
+  await page.request.post("/api/auth/login", { data: { email: "panitia@contoh.id", password: "demo123" } });
+  await page.request.delete(`/api/events/${live.id}`);
 });

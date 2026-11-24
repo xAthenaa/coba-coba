@@ -11,5 +11,5 @@ export default defineConfig({
     permissions: ["geolocation"],
     timezoneId: "Asia/Makassar",
   },
-  webServer: { command: "npm run db:fresh && npm run start -- -p 3100", url: BASE, reuseExistingServer: true, timeout: 120_000 },
+  webServer: { command: "npm run db:fresh && npx tsx tests/install-map-fixtures.ts && npm run start -- -p 3100", url: BASE, reuseExistingServer: true, timeout: 180_000 },
 });

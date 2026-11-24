@@ -51,16 +51,22 @@ async function main() {
   // ---------- G-00 / G-03 seed ----------
   section("G. Seed");
   if (prisma) {
-    const count = async () => ({ e: await prisma.event.count({ where: { id: { in: ["ev-webinar", "ev-invention", "ev-pkkmb"] } } }), o: await prisma.organizer.count({ where: { id: { in: ["org-ft", "org-hmif", "org-bem"] } } }), p: await prisma.place.count(), pin: await prisma.pin.count({ where: { id: { startsWith: "pin-" } } }), u: await prisma.user.count({ where: { id: { in: ["u-pengunjung", "u-panitia"] } } }), qr: await prisma.qrMap.count({ where: { eventId: { in: ["ev-webinar", "ev-invention", "ev-pkkmb"] } } }) });
+    const count = async () => ({ e: await prisma.event.count({ where: { id: { in: ["ev-webinar", "ev-invention", "ev-pkkmb"] } } }), o: await prisma.organizer.count({ where: { id: { in: ["org-ft", "org-hmif", "org-bem"] } } }), p: await prisma.place.count(), pin: await prisma.pin.count(), u: await prisma.user.count({ where: { id: { in: ["u-pengunjung", "u-panitia"] } } }), qr: await prisma.qrMap.count(), adm: await prisma.user.count({ where: { role: "ADMIN", id: { in: ["u-admin", "u-admin-2", "u-admin-3"] } } }) });
     const before = await count();
-    check("G-03 jumlah seed = isi JSON (3 event, 3 org, 23 tempat, 5 pin, 2 user JSON, 3 QR)", before.e === 3 && before.o === 3 && before.p === 23 && before.pin === 5 && before.u === 2 && before.qr === 3, before);
+    check("G-03 jumlah seed = 0 event, 3 org, 2 tempat, 0 pin, 2 user JSON, 0 QR, 3 admin", before.e === 0 && before.o === 3 && before.p === 2 && before.pin === 0 && before.u === 2 && before.qr === 0 && before.adm === 3, before);
     if (!process.env.WAYO_SKIP_RESEED) {
       const totals = async () => [await prisma.user.count(), await prisma.place.count(), await prisma.event.count(), await prisma.pin.count(), await prisma.registration.count(), await prisma.notification.count(), await prisma.qrMap.count()].join(",");
       const t0 = await totals();
       execSync("npx tsx prisma/seed.ts", { stdio: "ignore" });
       check("G-00 seed 2x tidak menggandakan data", (await totals()) === t0, { t0, t1: await totals() });
     }
-    check("G-00 ID JSON tetap", !!(await prisma.event.findUnique({ where: { id: "ev-invention" } })) && !!(await prisma.place.findUnique({ where: { id: "pl-fmipa" } })));
+    check("G-00 ID JSON tetap (user/org + 2 tempat seed); event contoh tidak di-seed", !!(await prisma.user.findUnique({ where: { id: "u-pengunjung" } })) && !!(await prisma.organizer.findUnique({ where: { id: "org-ft" } })) && !!(await prisma.place.findUnique({ where: { id: "pl-jb-rektorat" } })) && !!(await prisma.place.findUnique({ where: { id: "pl-fk" } })) && !(await prisma.event.findUnique({ where: { id: "ev-invention" } })));
+    // Tes berikutnya (C–N) masih memakai ID lama pl-*/ev-*/pin-*. Data itu dipasang di sini, bukan oleh seed produksi.
+    if (!process.env.WAYO_SKIP_FIXTURES) {
+      execSync("npx tsx tests/install-map-fixtures.ts", { stdio: "ignore" });
+      const after = await count();
+      check("G-00 fixture tes: 3 event, 24 tempat (2 seed + 22 baru), 5 pin, 3 QR", after.e === 3 && after.p === 24 && after.pin === 5 && after.qr === 3, after);
+    }
   } else console.log("  (lewati cek DB)");
 
   // ---------- A. Auth ----------
@@ -418,6 +424,11 @@ async function main() {
   r = await adm.login("admin@wayo.local", "admin123");
   check("N1-01 login admin seed -> 200 role ADMIN", r.status === 200 && r.data?.role === "ADMIN", r.json);
   check("N1-01 cookie wayo_role=ADMIN", adm.cookies.wayo_role === "ADMIN");
+  const adm2 = new Client("admin2"), adm3 = new Client("admin3");
+  r = await adm2.login(process.env.WAYO_ADMIN2_EMAIL || "admin2@wayo.local", process.env.WAYO_ADMIN2_PASSWORD || "admin123");
+  check("N1-01b login admin2 seed -> 200 role ADMIN", r.status === 200 && r.data?.role === "ADMIN" && r.data?.email === (process.env.WAYO_ADMIN2_EMAIL || "admin2@wayo.local"), r.json);
+  r = await adm3.login(process.env.WAYO_ADMIN3_EMAIL || "admin3@wayo.local", process.env.WAYO_ADMIN3_PASSWORD || "admin123");
+  check("N1-01c login admin3 seed -> 200 role ADMIN", r.status === 200 && r.data?.role === "ADMIN" && r.data?.email === (process.env.WAYO_ADMIN3_EMAIL || "admin3@wayo.local"), r.json);
   r = await anon.post("/api/auth/register", { name: "Calon Admin", email: `adm-${uniq}@contoh.id`, password: "rahasia123", role: "ADMIN" });
   check("N1-02 daftar publik role ADMIN ditolak -> 400", r.status === 400 && r.error?.fields?.role, r.json);
   const adminGets = ["/api/admin/stats", "/api/admin/users", "/api/admin/events", "/api/admin/facilities", "/api/admin/registrations", "/api/admin/pins", "/api/admin/notifications"];
