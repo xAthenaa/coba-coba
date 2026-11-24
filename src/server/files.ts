@@ -1,10 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { E } from "./http";
+import { deleteObject, getObject, putObject } from "./storage";
 
-/** Surat pengajuan event disimpan PRIVAT di data/proposals (tidak disajikan oleh /uploads). */
-export const PROPOSAL_DIR = path.join(process.cwd(), "data", "proposals");
+/** Surat pengajuan event disimpan PRIVAT (disk data/proposals atau Vercel Blob). Tidak disajikan oleh /uploads. */
 export const PROPOSAL_MAX = 5 * 1024 * 1024;
 const NAME_RE = /^[a-z0-9-]+\.pdf$/;
 
@@ -23,15 +21,14 @@ export async function readPdfUpload(req: Request) {
 }
 export async function saveProposal(buf: Buffer) {
   const name = `${Date.now().toString(36)}-${randomBytes(8).toString("hex")}.pdf`;
-  await mkdir(PROPOSAL_DIR, { recursive: true });
-  await writeFile(path.join(PROPOSAL_DIR, name), buf);
+  await putObject("proposals", name, buf, "application/pdf");
   return name;
 }
 export async function readProposal(name: string) {
   if (!NAME_RE.test(name)) return null;
-  try { return await readFile(path.join(PROPOSAL_DIR, name)); } catch { return null; }
+  return getObject("proposals", name);
 }
 export async function removeProposal(name?: string | null) {
   if (!name || !NAME_RE.test(name)) return;
-  await unlink(path.join(PROPOSAL_DIR, name)).catch(() => {});
+  await deleteObject("proposals", name);
 }

@@ -6,6 +6,8 @@ import { startSession } from "@/server/auth";
 import { userOut } from "@/server/serialize";
 import { REQ, isStr } from "@/server/validate";
 
+export const runtime = "nodejs";
+
 export const POST = route(async (req) => {
   const b = await readJson(req);
   const f: Record<string, string> = {};

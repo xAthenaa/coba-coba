@@ -1,12 +1,13 @@
 # WAYO — Way To Go
 
 Aplikasi peta & navigasi jalan kaki area event kampus Universitas Udayana — UI + backend (Next.js route handlers + Prisma).
-Next.js 15 App Router · TypeScript · Tailwind v4 · Leaflet/OSM · SWR · Prisma 6 (SQLite dev, siap Postgres) · bcryptjs · qrcode.
+Next.js 15 App Router · TypeScript · Tailwind v4 · Leaflet/OSM · SWR · Prisma 6 (PostgreSQL) · bcryptjs · qrcode.
 Layout mobile max-width 440px (iPhone 16 Pro Max 440×956), margin 24px, Poppins, primary navy `#1E3A8A`.
 
 ## Setup
+Butuh PostgreSQL lokal (contoh user/db `wayo` / password `wayo`). Lihat juga `DEPLOY-VERCEL.md` untuk hosting.
 ```bash
-cp .env.example .env   # DATABASE_URL, BASE_URL, WAYO_DEMO (+ Google OAuth & SMTP opsional, lihat di bawah)
+cp .env.example .env   # DATABASE_URL + DIRECT_URL (Postgres), BASE_URL, WAYO_DEMO (+ Google OAuth, SMTP, Blob opsional)
 npm install            # juga menjalankan prisma generate
 npm run db:fresh       # migrate deploy + kosongkan tabel + seed
 npm run dev            # http://localhost:3000
@@ -19,7 +20,9 @@ Akun Admin **hanya** dibuat oleh seed (`npm run db:seed` / `db:fresh`), tidak bi
 ### Variabel lingkungan
 | Env | Wajib | Keterangan |
 |---|---|---|
-| `DATABASE_URL` | ya | SQLite `file:./dev.db` (atau Postgres) |
+| `DATABASE_URL` | ya | URL PostgreSQL (lokal atau pooled Neon/Supabase) |
+| `DIRECT_URL` | ya | URL PostgreSQL langsung (tanpa pooler) untuk migrasi; lokal samakan dengan `DATABASE_URL` |
+| `BLOB_READ_WRITE_TOKEN` | di Vercel | Token Vercel Blob; kosong = file di disk `data/uploads` & `data/proposals` |
 | `BASE_URL` | disarankan | Origin publik; dipakai untuk tautan reset password & redirect Google |
 | `WAYO_DEMO` | tidak | `1` = aktifkan `/api/dev/qr-sample` |
 | `WAYO_ADMIN_EMAIL`, `WAYO_ADMIN_PASSWORD` | tidak | Akun admin seed (default `admin@wayo.local` / `admin123`) |
@@ -34,13 +37,11 @@ Akun Admin **hanya** dibuat oleh seed (`npm run db:seed` / `db:fresh`), tidak bi
 - **Admin** (`/admin`): dashboard ringkasan; kelola semua akun (ubah peran, nonaktif/aktifkan, hapus — tidak bisa mengubah/menghapus diri sendiri; perubahan mencabut sesi target); kelola semua event (ubah lewat form yang sama + jadwal, hapus); data master **tempat** (tambah/ubah/hapus; hapus ditolak `409 PLACE_IN_USE` bila masih dipakai event sebagai lokasi/fasilitas); data master **fasilitas**; pengawasan & penghapusan pendaftaran, pin, notifikasi.
 - **Login/Daftar Google**: OAuth 2.0 authorization code flow (tanpa library; state acak di cookie httpOnly 10 menit; email harus terverifikasi). Email Google yang sudah terdaftar akan ditautkan. Akun baru wajib memilih peran di halaman Daftar.
 - **Lupa password**: `POST /api/auth/forgot` membuat token acak (disimpan SHA-256, berlaku 1 jam, sekali pakai, token lama dibatalkan) dan mengirim email berisi `/atur-ulang-password?token=…`. Respons selalu sama (tidak membocorkan email terdaftar). Setelah reset, semua sesi pengguna dicabut.
-- **Event**: kuota peserta (opsional; daftar ditolak `409 EVENT_FULL` saat penuh; sisa kuota tampil di detail), **surat pengajuan** PDF ≤ 5 MB (disimpan privat di `data/proposals`, hanya panitia pemilik & admin yang bisa melihat/mengunduh), **jadwal kegiatan/rundown** terpisah (judul, mulai, selesai, pembicara, lokasi) di `/panitia/event/[id]/jadwal`, tampil di detail event.
+- **Event**: kuota peserta (opsional; daftar ditolak `409 EVENT_FULL` saat penuh; sisa kuota tampil di detail), **surat pengajuan** PDF ≤ 5 MB (disimpan privat (disk `data/proposals` atau Vercel Blob), hanya panitia pemilik & admin yang bisa melihat/mengunduh), **jadwal kegiatan/rundown** terpisah (judul, mulai, selesai, pembicara, lokasi) di `/panitia/event/[id]/jadwal`, tampil di detail event.
 `WAYO_DEMO=1` mengaktifkan `/api/dev/qr-sample` (dipakai tombol "simulasi scan"); matikan di produksi.
 
-### Pindah ke Postgres
-1. `prisma/schema.prisma`: `provider = "postgresql"` (enum sudah disimpan sebagai string, tidak perlu ubah model).
-2. `.env`: `DATABASE_URL="postgresql://user:pass@host:5432/wayo"`.
-3. Hapus `prisma/migrations` (migrasi SQLite) lalu `npx prisma migrate dev --name init` dan `npm run db:seed`.
+### Deploy ke Vercel
+Database sudah PostgreSQL. Panduan lengkap (Neon/Supabase, Vercel Blob, env, seed produksi, Google OAuth): lihat [`DEPLOY-VERCEL.md`](DEPLOY-VERCEL.md).
 
 ## Tes
 ```bash

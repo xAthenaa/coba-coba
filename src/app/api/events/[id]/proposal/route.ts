@@ -4,6 +4,8 @@ import { requireUser } from "@/server/auth";
 import { ownedEvent } from "@/server/rules";
 import { readPdfUpload, readProposal, removeProposal, saveProposal } from "@/server/files";
 
+export const runtime = "nodejs";
+
 /** Surat pengajuan event (PDF ≤ 5 MB). Hanya panitia pemilik event & Admin — tidak publik. */
 type P = { id: string };
 export const GET = route<P>(async (_r, { id }) => {

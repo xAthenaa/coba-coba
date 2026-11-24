@@ -4,6 +4,8 @@ import { db } from "@/server/db";
 import { ApiError, E, ok, readJson, route } from "@/server/http";
 import { clearCookies, sha256 } from "@/server/auth";
 
+export const runtime = "nodejs";
+
 const invalid = () => new ApiError(400, "INVALID_TOKEN", "Tautan atur ulang tidak valid atau sudah kedaluwarsa. Minta tautan baru.");
 async function findToken(token: unknown) {
   if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) return null;

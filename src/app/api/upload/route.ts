@@ -1,10 +1,10 @@
 import { randomBytes } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { E, ok, route } from "@/server/http";
 import { requireOrganizer } from "@/server/auth";
+import { putObject } from "@/server/storage";
 
-const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads");
+export const runtime = "nodejs";
+
 const MAX = 2 * 1024 * 1024;
 const TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const sniff = (b: Buffer) =>
@@ -25,7 +25,6 @@ export const POST = route(async (req) => {
   const real = sniff(buf);
   if (!real) throw E.validation({ file: "Isi file bukan gambar JPG/PNG/WEBP" });
   const name = `${Date.now().toString(36)}-${randomBytes(6).toString("hex")}.${TYPES[real]}`;
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(UPLOAD_DIR, name), buf);
+  await putObject("uploads", name, buf, real);
   return ok({ url: `/uploads/${name}` }, 201);
 });
