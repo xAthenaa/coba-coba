@@ -6,7 +6,7 @@ import { Button, Empty, Header, Modal } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { useItem } from "@/lib/mapItems";
 import { simStartFor, useGeo } from "@/lib/useGeo";
-import { CAMPUS_STRAIGHT_NOTE, distance, fmtDist, pathLength, pathUntil, pointAlong, turnText, walkMin } from "@/lib/geo";
+import { distance, fmtDist, pathLength, pathUntil, pointAlong, turnText, walkMin } from "@/lib/geo";
 import { useRoadRoute } from "@/lib/useRoadRoute";
 import type { LatLng } from "@/lib/types";
 
@@ -23,7 +23,7 @@ export default function Navigasi() {
     if (geo.state === "ok" && geo.pos) startRef.current = geo.pos;
     else if (geo.state !== "loading") startRef.current = simStartFor(it);
   }
-  const { route, road, campusStraight } = useRoadRoute(startRef.current, it);
+  const { route, road } = useRoadRoute(startRef.current, it);
   const total = pathLength(route);
   const [walked, setWalked] = useState(0);
   const [reroute, setReroute] = useState(false);
@@ -57,14 +57,13 @@ export default function Navigasi() {
       <div className="relative min-h-0 flex-1">
         {reroute && <div role="status" className="absolute inset-x-3 top-3 z-[600] rounded-xl bg-amber-400 px-3 py-2 text-sm font-semibold text-ink shadow">↻ Rute diperbarui</div>}
         <MapView center={pos} zoom={18} markers={[{ id: it.id, lat: it.lat, lng: it.lng, cat: it.cat, label: it.name, selected: true }]} user={pos}
-          route={route} routeDashed={campusStraight} walked={pathUntil(route, walked)} focus={pos} focusKey={Math.floor(walked / 15)} />
+          route={route} walked={pathUntil(route, walked)} focus={pos} focusKey={Math.floor(walked / 15)} />
         {geo.state !== "ok" && <p className="absolute bottom-2 left-3 z-[500] rounded bg-white/90 px-2 py-1 text-xs text-ink-2">Simulasi berjalan</p>}
       </div>
       <section className="z-10 flex shrink-0 items-center gap-4 border-t border-line bg-white px-6 pb-6 pt-4">
         <div className="flex-1">
           <p className="text-2xl font-bold text-primary">{walkMin(left)} mnt</p>
           <p className="text-sm text-ink-2">Sisa {fmtDist(left)} · tiba ±{new Date(Date.now() + walkMin(left) * 60000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</p>
-          {campusStraight && <p className="mt-1 text-xs text-ink-2">{CAMPUS_STRAIGHT_NOTE}</p>}
         </div>
         <Button variant="danger" className="!w-32" onClick={() => setConfirm(true)}>Akhiri</Button>
       </section>
