@@ -14,33 +14,34 @@ test("rute Pascasarjana/Kantin → Gedung FK mengikuti jalur dalam kampus", asyn
   await login(page);
   await page.goto("/peta/rute/pl-fk");
   await expect(page.locator(".leaflet-container")).toBeVisible();
-  // Tunggu polyline rute (bukan hanya tile)
   await expect(page.locator(".leaflet-overlay-pane path").first()).toBeVisible({ timeout: 20_000 });
-  // Tunggu ubin peta + perbandingan OSRM (rute kampus sudah tampil lebih dulu)
   await expect(page.locator(".leaflet-tile-loaded").first()).toBeVisible({ timeout: 20_000 });
   await page.waitForTimeout(2500);
-  // Jarak kampus ~243 m (dibulatkan), bukan detour OSRM ~422 m
   await expect(page.getByText(/· \d{2,3} m · jalan kaki/)).toBeVisible({ timeout: 10_000 });
   const distText = await page.getByText(/· \d{2,3} m · jalan kaki/).innerText();
   const m = Number(/(\d{2,3}) m/.exec(distText)?.[1]);
   expect(m).toBeGreaterThanOrEqual(200);
   expect(m).toBeLessThan(320);
-  const out = `${SHOT_DIR}/wayo-jalur-kampus-sudirman.png`;
-  await page.screenshot({ path: out, fullPage: true });
+  await page.screenshot({ path: `${SHOT_DIR}/wayo-jalur-kampus-luas-sudirman.png`, fullPage: true });
 });
 
-test("rute gerbang Jimbaran → Rektorat tetap tampil", async ({ page, context }) => {
+test("rute gerbang selatan Jimbaran → Fakultas Teknik mengikuti jalur kampus", async ({ page, context }) => {
   test.setTimeout(90_000);
-  await context.setGeolocation({ latitude: -8.7976237, longitude: 115.171076 });
+  await context.setGeolocation({ latitude: -8.800121, longitude: 115.1707223 });
   await login(page);
-  await page.goto("/peta/rute/pl-jb-rektorat");
+  await page.goto("/peta/rute/pl-jb-halte-ft");
   await expect(page.locator(".leaflet-container")).toBeVisible();
   await expect(page.locator(".leaflet-overlay-pane path").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.locator(".leaflet-tile-loaded").first()).toBeVisible({ timeout: 20_000 });
   await page.waitForTimeout(2500);
-  await expect(page.getByText(/Rektorat/)).toBeVisible();
+  await expect(page.getByText(/Fakultas Teknik/)).toBeVisible();
   const dist = page.getByText(/· \d+ m · jalan kaki|· \d,\d km · jalan kaki/);
   await expect(dist).toBeVisible({ timeout: 10_000 });
-  const out = `${SHOT_DIR}/wayo-jalur-kampus-jimbaran.png`;
-  await page.screenshot({ path: out, fullPage: true });
+  const text = await dist.innerText();
+  const km = /(\d),(\d) km/.exec(text);
+  const meters = /(\d{3,4}) m/.exec(text);
+  const m = km ? Number(km[1]) * 1000 + Number(km[2]) * 100 : Number(meters?.[1] ?? 0);
+  expect(m).toBeGreaterThanOrEqual(600);
+  expect(m).toBeLessThan(1600);
+  await page.screenshot({ path: `${SHOT_DIR}/wayo-jalur-kampus-luas-jimbaran.png`, fullPage: true });
 });
