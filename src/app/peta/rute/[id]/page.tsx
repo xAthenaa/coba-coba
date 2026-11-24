@@ -4,7 +4,7 @@ import { MapView } from "@/components/MapView";
 import { Button, Empty, Header, Banner } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { useItem } from "@/lib/mapItems";
-import { useGeo, SIM_START } from "@/lib/useGeo";
+import { useGeo, simStartFor } from "@/lib/useGeo";
 import { fmtDist, pathLength, walkMin } from "@/lib/geo";
 import { useRoadRoute } from "@/lib/useRoadRoute";
 
@@ -14,7 +14,7 @@ export default function Rute() {
   const it = useItem(id);
   const geo = useGeo();
   const r = useRouter();
-  const origin = geo.pos ?? SIM_START;
+  const origin = it && geo.state === "ok" && geo.pos ? geo.pos : it ? simStartFor(it) : null;
   const { route } = useRoadRoute(origin, it);
   if (!it) return <><Header title="Rute" /><main className="flex-1 p-6"><Empty title="Tujuan tidak ditemukan" /></main></>;
   const len = pathLength(route);
@@ -26,8 +26,8 @@ export default function Rute() {
         <button onClick={() => r.back()} className="absolute left-4 top-4 z-[500] flex h-10 items-center gap-1 rounded-full bg-white px-4 text-sm font-semibold text-primary shadow"><Icon name="close" size={18} />Batal</button>
       </div>
       <section className="z-10 shrink-0 rounded-t-2xl bg-white px-6 pb-6 pt-4 shadow-[0_-4px_16px_rgba(0,0,0,.08)]">
-        {!geo.pos && <div className="mb-3"><Banner>Lokasi tidak aktif — asal rute memakai gerbang kampus (simulasi).</Banner></div>}
-        {geo.state === "simulated" && <div className="mb-3"><Banner tone="info">Kamu di luar kampus — asal rute disimulasikan.</Banner></div>}
+        {geo.state !== "ok" && geo.state !== "loading" && geo.state !== "simulated" && <div className="mb-3"><Banner>Lokasi tidak aktif — asal rute memakai gerbang/pusat kampus (simulasi).</Banner></div>}
+        {geo.state === "simulated" && <div className="mb-3"><Banner tone="info">Kamu di luar kampus — asal rute memakai gerbang/pusat kampus.</Banner></div>}
         {far && <div className="mb-3"><Banner>Tujuan berada di kampus lain ({fmtDist(len)}). Rute jalan kaki tidak disarankan.</Banner></div>}
         <div className="space-y-2 text-sm">
           <p className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-blue-600" />Lokasi saya</p>

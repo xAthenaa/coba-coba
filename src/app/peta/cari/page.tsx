@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BackButton, Chip, CatDot, Empty } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { useMapItems } from "@/lib/mapItems";
-import { useGeo, SIM_START } from "@/lib/useGeo";
+import { useGeo, simStartFor } from "@/lib/useGeo";
 import { campuses } from "@/lib/data";
 import { categoryLabel } from "@/lib/tokens";
 import { distance, fmtDist, walkMin } from "@/lib/geo";
@@ -15,10 +15,12 @@ export default function Cari() {
   const geo = useGeo();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
-  const origin = geo.pos ?? SIM_START;
   const res = items
     .filter((i) => (!cat || i.cat === cat) && (!q || i.name.toLowerCase().includes(q.toLowerCase())))
-    .map((i) => ({ ...i, d: distance(origin, i) }))
+    .map((i) => {
+      const origin = geo.state === "ok" && geo.pos ? geo.pos : simStartFor(i);
+      return { ...i, d: distance(origin, i) };
+    })
     .sort((a, b) => a.d - b.d);
   return (
     <>
@@ -30,7 +32,7 @@ export default function Cari() {
       <main className="flex-1 overflow-y-auto px-6 py-4">
         <p className="mb-2 text-xs font-semibold text-ink-2">TERDEKAT</p>
         <div className="flex gap-2">{["toilet", "kantin", "parkir"].map((c) => <Chip key={c} active={cat === c} onClick={() => setCat(cat === c ? "" : c)}>{categoryLabel[c]} terdekat</Chip>)}</div>
-        {!geo.pos && <p className="mt-2 text-xs text-ink-2">Jarak dihitung dari gerbang kampus (lokasi tidak aktif).</p>}
+        {geo.state !== "ok" && geo.state !== "loading" && <p className="mt-2 text-xs text-ink-2">{geo.state === "simulated" ? "Jarak dihitung dari gerbang/pusat kampus (kamu di luar kampus)." : "Jarak dihitung dari gerbang/pusat kampus (lokasi tidak aktif)."}</p>}
         {res.length ? (
           <ul className="mt-4 divide-y divide-line">
             {res.map((i) => (

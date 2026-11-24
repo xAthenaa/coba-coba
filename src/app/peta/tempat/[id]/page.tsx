@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button, Badge, Empty, Header } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { useItem } from "@/lib/mapItems";
-import { useGeo, SIM_START } from "@/lib/useGeo";
+import { useGeo, simStartFor } from "@/lib/useGeo";
 import { useEvents } from "@/lib/api";
 import { campuses, eventStatus, fmtDate, fmtTime } from "@/lib/data";
 import { categoryLabel } from "@/lib/tokens";
@@ -21,7 +21,7 @@ export default function Tempat() {
   const r = useRouter();
   if (!it && isLoading) return <main className="flex flex-1 items-center justify-center text-sm text-ink-2">Memuat…</main>;
   if (!it) return <><Header title="Detail Tempat" /><main className="flex-1 p-6"><Empty title="Tempat tidak ditemukan" /></main></>;
-  const origin = geo.pos ?? SIM_START;
+  const origin = geo.state === "ok" && geo.pos ? geo.pos : simStartFor(it);
   const d = distance(origin, it);
   const placeId = it.pin ? null : it.id;
   const evHere = events.filter((e) => (placeId ? e.placeId === placeId : e.id === it.pin?.eventId) && eventStatus(e) !== "selesai");
@@ -42,7 +42,7 @@ export default function Tempat() {
           <div><p className="text-base font-semibold">{walkMin(d)} mnt</p><p className="text-xs text-ink-2">Jalan kaki</p></div>
           <div><p className="text-base font-semibold">{it.pin ? "Aktif" : "Buka"}</p><p className="text-xs text-ink-2">{it.hours ?? (it.pin?.end ? `s.d. ${fmtTime(it.pin.end)}` : "07.00 – 21.00")}</p></div>
         </div>
-        {!geo.pos && <p className="mt-2 text-xs text-ink-2">Jarak dari gerbang kampus (lokasi tidak aktif).</p>}
+        {geo.state !== "ok" && geo.state !== "loading" && <p className="mt-2 text-xs text-ink-2">{geo.state === "simulated" ? "Jarak dari gerbang/pusat kampus (kamu di luar kampus)." : "Jarak dari gerbang/pusat kampus (lokasi tidak aktif)."}</p>}
         <div className="mt-4 flex h-28 items-center justify-center rounded-xl bg-muted text-xs text-ink-2">Foto tempat (contoh)</div>
         {it.description && <p className="mt-3 text-sm text-ink-2">{it.description}</p>}
         {it.pin?.type === "timed" && it.pin.start && it.pin.end && (

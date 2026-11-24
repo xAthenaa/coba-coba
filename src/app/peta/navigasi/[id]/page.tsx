@@ -5,9 +5,10 @@ import { MapView } from "@/components/MapView";
 import { Button, Empty, Header, Modal } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { useItem } from "@/lib/mapItems";
-import { SIM_START, useGeo } from "@/lib/useGeo";
+import { simStartFor, useGeo } from "@/lib/useGeo";
 import { distance, fmtDist, pathLength, pathUntil, pointAlong, turnText, walkMin } from "@/lib/geo";
 import { useRoadRoute } from "@/lib/useRoadRoute";
+import type { LatLng } from "@/lib/types";
 
 const SIM_SECONDS = 18; // durasi simulasi berjalan (dipercepat)
 
@@ -17,7 +18,11 @@ export default function Navigasi() {
   const it = useItem(id);
   const geo = useGeo();
   const r = useRouter();
-  const startRef = useRef(geo.pos ?? SIM_START);
+  const startRef = useRef<LatLng | null>(null);
+  if (it && !startRef.current) {
+    if (geo.state === "ok" && geo.pos) startRef.current = geo.pos;
+    else if (geo.state !== "loading") startRef.current = simStartFor(it);
+  }
   const { route, road } = useRoadRoute(startRef.current, it);
   const total = pathLength(route);
   const [walked, setWalked] = useState(0);
@@ -36,7 +41,7 @@ export default function Navigasi() {
   }, [walked, total, it, r]);
   if (!it) return <><Header title="Navigasi" /><main className="flex-1 p-6"><Empty title="Tujuan tidak ditemukan" /></main></>;
   // Rute jalan (OSRM) dimuat async: selama route masih [] pakai titik awal agar peta tidak crash (dulu: undefined.lat).
-  const pos = pointAlong(route, walked) ?? startRef.current;
+  const pos = pointAlong(route, walked) ?? startRef.current ?? simStartFor(it);
   const left = Math.max(0, total - walked);
   const firstLeg = !road && route.length > 2 ? distance(route[0], route[1]) : 0;
   const beforeTurn = walked < firstLeg;
