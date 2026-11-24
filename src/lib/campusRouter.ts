@@ -5,22 +5,28 @@ import campusPathData from "../../data/campus-paths.json";
 /** Data graf jalur kaki kampus (OSM). Lihat data/campus-paths.json untuk sumber & lisensi. */
 type CampusPathsFile = {
   maxSnapMeters: number;
+  marginMeters: number;
   connectors: unknown[];
   campuses: Record<string, {
     bbox: { south: number; west: number; north: number; east: number };
-    nodes: number[][];
-    edges: number[][];
+    marginMeters?: number;
+    rings: number[][][];
+    coords: number[];
+    edges: number[];
   }>;
 };
 
 const data = campusPathData as unknown as CampusPathsFile;
 export const MAX_SNAP_M = data.maxSnapMeters;
+export const MARGIN_M = data.marginMeters;
 export const CAMPUS_CONNECTORS = data.connectors;
 
 type Adj = Map<number, { to: number; w: number }[]>;
 type Graph = {
   id: CampusId;
   bbox: { south: number; west: number; north: number; east: number };
+  margin: number;
+  rings: LatLng[][];
   nodes: Map<number, LatLng>;
   adj: Adj;
 };
@@ -30,14 +36,17 @@ function buildGraphs(): Record<CampusId, Graph> {
   for (const id of ["sudirman", "jimbaran"] as CampusId[]) {
     const raw = data.campuses[id];
     const nodes = new Map<number, LatLng>();
-    for (const [nid, lat, lng] of raw.nodes) nodes.set(nid, { lat, lng });
+    for (let i = 0; i < raw.coords.length; i += 2) {
+      nodes.set(i / 2, { lat: raw.coords[i], lng: raw.coords[i + 1] });
+    }
     const adj: Adj = new Map();
     const link = (a: number, b: number, w: number) => {
       const list = adj.get(a);
       if (list) list.push({ to: b, w });
       else adj.set(a, [{ to: b, w }]);
     };
-    for (const [a, b] of raw.edges) {
+    for (let i = 0; i < raw.edges.length; i += 2) {
+      const a = raw.edges[i], b = raw.edges[i + 1];
       const pa = nodes.get(a), pb = nodes.get(b);
       if (!pa || !pb) continue;
       const w = distance(pa, pb);
@@ -45,7 +54,8 @@ function buildGraphs(): Record<CampusId, Graph> {
       link(a, b, w);
       link(b, a, w);
     }
-    out[id] = { id, bbox: raw.bbox, nodes, adj };
+    const rings = raw.rings.map((ring) => ring.map(([lat, lng]) => ({ lat, lng })));
+    out[id] = { id, bbox: raw.bbox, margin: raw.marginMeters ?? data.marginMeters, rings, nodes, adj };
   }
   return out;
 }
@@ -56,10 +66,52 @@ function inBbox(p: LatLng, b: Graph["bbox"]): boolean {
   return p.lat >= b.south && p.lat <= b.north && p.lng >= b.west && p.lng <= b.east;
 }
 
-/** Kampus yang memuat titik, atau null bila di luar bbox graf jalur kampus. */
+function pointInRing(p: LatLng, ring: LatLng[]): boolean {
+  let inside = false;
+  const n = ring.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const yi = ring[i].lat, xi = ring[i].lng;
+    const yj = ring[j].lat, xj = ring[j].lng;
+    if ((yi > p.lat) !== (yj > p.lat) && p.lng < ((xj - xi) * (p.lat - yi)) / ((yj - yi) || 1e-18) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function distToSegment(p: LatLng, a: LatLng, b: LatLng): number {
+  const mx = 111320 * Math.cos((p.lat * Math.PI) / 180);
+  const my = 110540;
+  const px = p.lng * mx, py = p.lat * my;
+  const ax = a.lng * mx, ay = a.lat * my;
+  const bx = b.lng * mx, by = b.lat * my;
+  const vx = bx - ax, vy = by - ay;
+  const lv = vx * vx + vy * vy;
+  const t = lv <= 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / lv));
+  return Math.hypot(px - (ax + t * vx), py - (ay + t * vy));
+}
+
+function distToCampus(p: LatLng, g: Graph): number {
+  if (g.rings.some((r) => pointInRing(p, r))) return 0;
+  let best = Infinity;
+  for (const ring of g.rings) {
+    const n = ring.length;
+    if (n < 2) continue;
+    for (let i = 0; i < n; i++) {
+      const d = distToSegment(p, ring[i], ring[(i + 1) % n]);
+      if (d < best) best = d;
+    }
+  }
+  return best;
+}
+
+/** Kampus yang memuat titik (di dalam poligon OSM + margin), atau null. */
 export function campusAreaOf(p: LatLng): CampusId | null {
-  if (inBbox(p, graphs.sudirman.bbox)) return "sudirman";
-  if (inBbox(p, graphs.jimbaran.bbox)) return "jimbaran";
+  for (const id of ["sudirman", "jimbaran"] as CampusId[]) {
+    const g = graphs[id];
+    if (!inBbox(p, g.bbox)) continue;
+    if (distToCampus(p, g) <= g.margin) return id;
+  }
   return null;
 }
 
@@ -190,7 +242,6 @@ export type RouteStep = { instruction: string; meters: number };
 function turnOf(a: LatLng, b: LatLng, c: LatLng): "kiri" | "kanan" | "lurus" {
   const cross = (b.lng - a.lng) * (c.lat - b.lat) - (b.lat - a.lat) * (c.lng - b.lng);
   const mag = Math.abs(cross);
-  // Ambang kasar ~ belokan nyata, bukan getaran digit koordinat.
   const scale = distance(a, b) * distance(b, c);
   if (scale <= 0 || mag / scale < 0.15) return "lurus";
   return cross > 0 ? "kiri" : "kanan";
