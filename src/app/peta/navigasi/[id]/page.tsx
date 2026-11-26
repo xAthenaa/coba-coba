@@ -58,7 +58,6 @@ export default function Navigasi() {
         {reroute && <div role="status" className="absolute inset-x-3 top-3 z-[600] rounded-xl bg-amber-400 px-3 py-2 text-sm font-semibold text-ink shadow">↻ Rute diperbarui</div>}
         <MapView center={pos} zoom={18} markers={[{ id: it.id, lat: it.lat, lng: it.lng, cat: it.cat, label: it.name, selected: true }]} user={pos}
           route={route} walked={pathUntil(route, walked)} focus={pos} focusKey={Math.floor(walked / 15)} />
-        {geo.state !== "ok" && <p className="absolute bottom-2 left-3 z-[500] rounded bg-white/90 px-2 py-1 text-xs text-ink-2">Simulasi berjalan</p>}
       </div>
       <section className="z-10 flex shrink-0 items-center gap-4 border-t border-line bg-white px-6 pb-6 pt-4">
         <div className="flex-1">

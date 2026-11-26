@@ -26,7 +26,7 @@ export default function Rute() {
         <button onClick={() => r.back()} className="absolute left-4 top-4 z-[500] flex h-10 items-center gap-1 rounded-full bg-white px-4 text-sm font-semibold text-primary shadow"><Icon name="close" size={18} />Batal</button>
       </div>
       <section className="z-10 shrink-0 rounded-t-2xl bg-white px-6 pb-6 pt-4 shadow-[0_-4px_16px_rgba(0,0,0,.08)]">
-        {geo.state !== "ok" && geo.state !== "loading" && geo.state !== "simulated" && <div className="mb-3"><Banner>Lokasi tidak aktif — asal rute memakai gerbang/pusat kampus (simulasi).</Banner></div>}
+        {geo.state !== "ok" && geo.state !== "loading" && geo.state !== "simulated" && <div className="mb-3"><Banner>Lokasi tidak aktif — asal rute memakai gerbang/pusat kampus.</Banner></div>}
         {geo.state === "simulated" && <div className="mb-3"><Banner tone="info">Kamu di luar kampus — asal rute memakai gerbang/pusat kampus.</Banner></div>}
         {far && <div className="mb-3"><Banner>Tujuan berada di kampus lain ({fmtDist(len)}). Rute jalan kaki tidak disarankan.</Banner></div>}
         <div className="space-y-2 text-sm">

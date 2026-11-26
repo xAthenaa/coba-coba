@@ -6,7 +6,7 @@ import { ToastProvider } from "@/components/Toast";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-poppins" });
 
-export const metadata: Metadata = { title: "WAYO — Way To Go", description: "Peta & navigasi jalan kaki area event kampus (prototype UI)" };
+export const metadata: Metadata = { title: "WAYO — Way To Go", description: "Peta & navigasi jalan kaki area event kampus" };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1E3A8A" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -58,9 +58,9 @@ export function PetaView({ qrEventId }: { qrEventId?: string }) {
         <div className="absolute inset-x-3 top-3 z-[600] space-y-2 pr-16">
           {qrEvent && <Banner tone="info" action={<Link href={`/event/${qrEvent.id}`} className="font-semibold underline">Lihat event</Link>}>Peta dari QR: {qrEvent.name}</Banner>}
           {campus === "jimbaran" && !placesLoading && !items.some((i) => i.campus === "jimbaran") && <Banner tone="info">Belum ada tempat di Kampus Jimbaran.</Banner>}
-          {geo.state === "offline" && <Banner>Offline — menampilkan peta tersimpan (contoh).</Banner>}
+          {geo.state === "offline" && <Banner>Offline — menampilkan peta tersimpan.</Banner>}
           {locBad && <Banner action={<Link href="/izin-lokasi?status=ditolak" className="font-semibold underline">Aktifkan</Link>}>Lokasi {geo.state === "off" ? "GPS mati" : "ditolak"}.</Banner>}
-          {geo.state === "simulated" && locOn && <Banner tone="info">Kamu di luar kampus — memakai posisi simulasi.</Banner>}
+          {geo.state === "simulated" && locOn && <Banner tone="info">Kamu di luar kampus — memakai posisi gerbang/pusat kampus.</Banner>}
           {cat && shown.length > 0 && cat !== "event" && geo.pos && (() => { const n = [...shown].sort((a, b) => distance(geo.pos!, a) - distance(geo.pos!, b))[0];
             return <Link href={`/peta/tempat/${n.id}`} className="block rounded-xl bg-ink px-3 py-2 text-xs font-medium text-white">{categoryLabel[cat]} terdekat: {n.name} · {fmtDist(distance(geo.pos!, n))} ›</Link>; })()}
         </div>

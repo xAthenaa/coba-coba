@@ -91,12 +91,12 @@ async function main() {
   await upsertAdmin("u-admin-2", "Admin WAYO 2", "WAYO_ADMIN2_EMAIL", "admin2@wayo.local", "WAYO_ADMIN2_PASSWORD");
   await upsertAdmin("u-admin-3", "Admin WAYO 3", "WAYO_ADMIN3_EMAIL", "admin3@wayo.local", "WAYO_ADMIN3_PASSWORD");
   for (const f of [
-    { id: "fac-toilet-aud", name: "Toilet Auditorium", category: "TOILET", placeId: "pl-toilet-aud", description: "Toilet pria & wanita dekat aula (contoh)" },
-    { id: "fac-toilet-fk", name: "Toilet FK", category: "TOILET", placeId: "pl-toilet-fmipa", description: "Contoh" },
-    { id: "fac-parkir-utama", name: "Parkir Utama", category: "PARKIR", placeId: "pl-parkir-utama", description: "Parkir motor & mobil (contoh)" },
-    { id: "fac-kantin-pusat", name: "Kantin Pusat", category: "KANTIN", placeId: "pl-kantin-pusat", description: "Contoh" },
-    { id: "fac-info", name: "Meja Informasi", category: "LAINNYA", placeId: "pl-info", description: "Pusat informasi kampus (contoh)" },
-    { id: "fac-jb-kantin1", name: "Kantin 1 Jimbaran", category: "KANTIN", placeId: "pl-jb-kantin1", description: "Contoh" },
+    { id: "fac-toilet-aud", name: "Toilet Auditorium", category: "TOILET", placeId: "pl-toilet-aud", description: "Toilet pria & wanita dekat aula" },
+    { id: "fac-toilet-fk", name: "Toilet FK", category: "TOILET", placeId: "pl-toilet-fmipa", description: "" },
+    { id: "fac-parkir-utama", name: "Parkir Utama", category: "PARKIR", placeId: "pl-parkir-utama", description: "Parkir motor & mobil" },
+    { id: "fac-kantin-pusat", name: "Kantin Pusat", category: "KANTIN", placeId: "pl-kantin-pusat", description: "" },
+    { id: "fac-info", name: "Meja Informasi", category: "LAINNYA", placeId: "pl-info", description: "Pusat informasi kampus" },
+    { id: "fac-jb-kantin1", name: "Kantin 1 Jimbaran", category: "KANTIN", placeId: "pl-jb-kantin1", description: "" },
   ]) {
     const d = { name: f.name, category: f.category, description: f.description, placeId: placeIds.has(f.placeId) ? f.placeId : null };
     await db.facility.upsert({ where: { id: f.id }, create: { id: f.id, ...d }, update: d });
@@ -108,7 +108,7 @@ async function main() {
     for (const s of [
       { id: "sch-inv-1", title: "Registrasi & pembukaan", startAt: new Date(s0), endAt: new Date(s0 + 0.5 * H), speaker: null, location: "Lobi" },
       { id: "sch-inv-2", title: "Pameran karya mahasiswa", startAt: new Date(s0 + 0.5 * H), endAt: new Date(s0 + 2 * H), speaker: null, location: "Aula" },
-      { id: "sch-inv-3", title: "Penjurian & penutupan", startAt: new Date(s0 + 2 * H), endAt: new Date(s0 + 3 * H), speaker: "Dewan juri (contoh)", location: "Aula" },
+      { id: "sch-inv-3", title: "Penjurian & penutupan", startAt: new Date(s0 + 2 * H), endAt: new Date(s0 + 3 * H), speaker: "Dewan juri", location: "Aula" },
     ]) await db.eventSchedule.upsert({ where: { id: s.id }, create: { ...s, eventId: inv.id }, update: { ...s, eventId: inv.id } });
   } else if (inv) {
     skipped.schedules += 3;
