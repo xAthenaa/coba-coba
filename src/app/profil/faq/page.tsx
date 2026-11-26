@@ -5,7 +5,6 @@ const faq = [
   ["Bagaimana cara scan QR Peta?", "Login sebagai pengunjung, lalu tekan tombol QR di Home atau Peta. Semua fitur WAYO memerlukan login."],
   ["Kenapa titik biru tidak muncul?", "Pastikan izin lokasi diizinkan dan GPS menyala."],
   ["Apa itu pin berbasis waktu?", "Pin dari panitia yang tampil hanya pada rentang tanggal-jam tertentu, lalu hilang otomatis."],
-  ["Apakah data di aplikasi ini asli?", "Belum. Semua data di prototype ini adalah data contoh."],
 ];
 /** V-13d Bantuan & FAQ */
 export default function Bantuan() {

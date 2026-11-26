@@ -42,7 +42,7 @@ function Login() {
       {next && <div className="mt-4"><Banner>Silakan masuk untuk melanjutkan.</Banner></div>}
       {google && GOOGLE_MSG[google] && <div className="mt-4"><Banner>{GOOGLE_MSG[google]}</Banner></div>}
       <form onSubmit={submit} className="mt-6 space-y-4">
-        <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@contoh.id" autoComplete="email" />
+        <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@email.com" autoComplete="email" />
         <div>
           <Field label="Password" type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••" autoComplete="current-password" />
           <Link href="/lupa-password" className="mt-2 inline-block text-xs text-primary">Lupa Password?</Link>
@@ -52,7 +52,6 @@ function Login() {
       </form>
       <div className="my-4 flex items-center gap-3 text-xs text-ink-2"><span className="h-px flex-1 bg-line" />atau<span className="h-px flex-1 bg-line" /></div>
       <GoogleButton mode="login" next={next} label="Masuk dengan Google" />
-      <p className="mt-3 text-center text-xs text-ink-2">Demo (contoh): panitia@contoh.id atau pengunjung@contoh.id / demo123</p>
       <p className="mt-6 text-center text-xs text-ink">Belum memiliki akun? <Link href="/daftar" className="font-semibold text-primary">Daftar sekarang</Link></p>
     </main>
   );

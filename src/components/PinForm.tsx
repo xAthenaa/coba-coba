@@ -42,7 +42,7 @@ export function PinForm({ eventId, initial }: { eventId: string; initial?: Pin }
         <p className="pointer-events-none absolute inset-x-3 bottom-3 z-[500] rounded-lg bg-white/95 px-3 py-2 text-center text-xs font-medium">{pt ? `Titik: ${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)} — tap untuk memindah` : "Tap peta untuk memilih titik"}</p>
       </div>
       <form onSubmit={submit} className="space-y-4 px-6 py-4">
-        <Field label="Label pin" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="mis. Booth Registrasi" />
+        <Field label="Label pin" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Booth Registrasi" />
         <div><span className="mb-2 block text-xs font-medium">Kategori</span>
           <div className="no-scrollbar -mx-6 flex gap-2 overflow-x-auto px-6">{(Object.keys(categoryLabel) as Category[]).map((c) => <Chip key={c} active={cat === c} color={tokens.category[c]} onClick={() => setCat(c)}>{categoryLabel[c]}</Chip>)}</div></div>
         <div><span className="mb-2 block text-xs font-medium">Tipe pin</span>
@@ -51,7 +51,7 @@ export function PinForm({ eventId, initial }: { eventId: string; initial?: Pin }
           <Field label="Tanggal-jam pasang (wajib)" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
           <Field label="Tanggal-jam hapus (wajib, setelah pasang)" type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
           <p className="text-xs text-ink-2">Pin otomatis hilang dari peta pengunjung setelah waktu hapus.</p>
-        </> : <p className="rounded-lg bg-soft p-3 text-xs text-ink-2">Pin permanen tampil tanpa batas waktu (mis. stand mahasiswa) dan hanya bisa dihapus manual.</p>}
+        </> : <p className="rounded-lg bg-soft p-3 text-xs text-ink-2">Pin permanen tampil tanpa batas waktu dan hanya bisa dihapus manual.</p>}
         {err && <p role="alert" className="text-xs font-medium text-danger">{err}</p>}
         <Button type="submit">Simpan</Button>
         {initial && <Button type="button" variant="secondary" className="!border-danger !text-danger" onClick={() => setDel(true)}>Hapus Pin</Button>}

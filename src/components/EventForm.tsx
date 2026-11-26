@@ -91,7 +91,7 @@ export function EventForm({ initial, afterSave, children }: { initial?: UIEvent;
         <Field label="Mulai" type="datetime-local" value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} />
         <Field label="Selesai" type="datetime-local" value={f.end} onChange={(e) => setF({ ...f, end: e.target.value })} />
         <div>
-          <Field label="Kuota peserta (kosongkan bila tanpa batas)" type="number" min={1} inputMode="numeric" value={f.quota} onChange={(e) => setF({ ...f, quota: e.target.value })} placeholder="mis. 100" />
+          <Field label="Kuota peserta (kosongkan bila tanpa batas)" type="number" min={1} inputMode="numeric" value={f.quota} onChange={(e) => setF({ ...f, quota: e.target.value })} placeholder="100" />
           {initial && (initial.registrantCount ?? 0) > 0 && <p className="mt-1 text-xs text-ink-2">Sudah ada {initial.registrantCount} pendaftar.</p>}
         </div>
         <div><span className="mb-2 block text-xs font-medium">Surat pengajuan event (PDF, maks 5 MB — hanya panitia & admin)</span>

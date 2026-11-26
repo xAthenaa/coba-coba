@@ -43,7 +43,7 @@ export default function Tempat() {
           <div><p className="text-base font-semibold">{it.pin ? "Aktif" : "Buka"}</p><p className="text-xs text-ink-2">{it.hours ?? (it.pin?.end ? `s.d. ${fmtTime(it.pin.end)}` : "07.00 – 21.00")}</p></div>
         </div>
         {geo.state !== "ok" && geo.state !== "loading" && <p className="mt-2 text-xs text-ink-2">{geo.state === "simulated" ? "Jarak dari gerbang/pusat kampus (kamu di luar kampus)." : "Jarak dari gerbang/pusat kampus (lokasi tidak aktif)."}</p>}
-        <div className="mt-4 flex h-28 items-center justify-center rounded-xl bg-muted text-xs text-ink-2">Foto tempat (contoh)</div>
+        <div className="mt-4 flex h-28 items-center justify-center rounded-xl bg-muted text-xs text-ink-2">Foto tempat</div>
         {it.description && <p className="mt-3 text-sm text-ink-2">{it.description}</p>}
         {it.pin?.type === "timed" && it.pin.start && it.pin.end && (
           <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm">
